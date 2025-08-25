@@ -10,7 +10,7 @@ const getRatingColor = (rating) => {
     return '#F44336'; // Красный для очень низких
 };
 
-const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlist }) => {
+const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlist, onEditMovie }) => {
     const [isHovered, setIsHovered] = useState(false);
 
     const handleMouseEnter = () => setIsHovered(true);
@@ -98,6 +98,13 @@ const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlis
                         )}
 
                         <ActionButtons>
+                            <EditButton onClick={(e) => {
+                                e.stopPropagation();
+                                if (onEditMovie) onEditMovie(movie);
+                            }}>
+                                ✏️ Редактировать
+                            </EditButton>
+                            
                             {movie.status === 'watchlist' ? (
                                 <RemoveButton onClick={(e) => {
                                     e.stopPropagation();
@@ -318,8 +325,9 @@ const NoReviews = styled.div`
 
 const ActionButtons = styled.div`
     display: flex;
-    gap: 12px;
-    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
 `;
 
 const AddButton = styled.button`
@@ -335,6 +343,22 @@ const AddButton = styled.button`
 
     &:hover {
         background: #45a049;
+    }
+`;
+
+const EditButton = styled.button`
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: #1976D2;
     }
 `;
 

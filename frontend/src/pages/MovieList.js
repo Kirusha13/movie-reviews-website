@@ -4,10 +4,11 @@ import MovieCard from '../components/MovieCard';
 import MovieFilters from '../components/MovieFilters';
 import { movieService } from '../services/movieService';
 
-const MovieList = () => {
+const MovieList = ({ onEditMovie }) => {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useState(false);
     const [filters, setFilters] = useState({
         genre: '',
         minRating: 0,
@@ -28,6 +29,23 @@ const MovieList = () => {
         fetchGenres();
         fetchMovies();
     }, [filters, pagination.page]);
+
+    // Обработка нажатия Escape для закрытия панели
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isFiltersPanelOpen) {
+                setIsFiltersPanelOpen(false);
+            }
+        };
+
+        if (isFiltersPanelOpen) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isFiltersPanelOpen]);
 
     const fetchGenres = async () => {
         try {
@@ -156,6 +174,25 @@ const MovieList = () => {
         }
     };
 
+    const handleEditMovie = (movie) => {
+        if (onEditMovie) {
+            onEditMovie(movie);
+        }
+    };
+
+    const toggleFiltersPanel = () => {
+        setIsFiltersPanelOpen(!isFiltersPanelOpen);
+    };
+
+    const hasActiveFilters = () => {
+        return filters.genre || 
+               filters.minRating > 0 || 
+               filters.maxRating < 10 || 
+               filters.status ||
+               filters.sortBy !== 'created_at' ||
+               filters.sortOrder !== 'DESC';
+    };
+
     if (loading && movies.length === 0) {
         return (
             <LoadingContainer>
@@ -166,18 +203,34 @@ const MovieList = () => {
     }
 
     return (
-        <PageContainer>
-            <Header>
-                <Title>🎬 Мои фильмы</Title>
-                <Subtitle>Управляйте своей коллекцией фильмов и рецензий</Subtitle>
-            </Header>
+                <PageContainer>
+            {/* Кнопка открытия панели фильтров */}
+            <FiltersToggleButton onClick={toggleFiltersPanel}>
+                {isFiltersPanelOpen ? '✕' : '🔍'}
+                <span>{isFiltersPanelOpen ? 'Закрыть' : 'Фильтры'}</span>
+            </FiltersToggleButton>
+            
+            {/* Индикатор активных фильтров */}
+            {!isFiltersPanelOpen && hasActiveFilters() && (
+                <ActiveFiltersIndicator />
+            )}
 
-            <MovieFilters
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-                genres={genres}
-                onSearch={handleSearch}
-            />
+            {/* Выдвигающаяся панель фильтров */}
+            <FiltersPanel isOpen={isFiltersPanelOpen}>
+                <FiltersPanelHeader>
+                    <h3>Поиск и фильтры</h3>
+                    <CloseButton onClick={toggleFiltersPanel}>✕</CloseButton>
+                </FiltersPanelHeader>
+                <MovieFilters
+                    filters={filters}
+                    onFiltersChange={handleFiltersChange}
+                    genres={genres}
+                    onSearch={handleSearch}
+                />
+            </FiltersPanel>
+
+            {/* Затемнение фона при открытой панели */}
+            {isFiltersPanelOpen && <Overlay onClick={toggleFiltersPanel} />}
 
             {error && (
                 <ErrorMessage>
@@ -204,6 +257,7 @@ const MovieList = () => {
                                 onMovieClick={handleMovieClick}
                                 onAddToWatchlist={handleAddToWatchlist}
                                 onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                                onEditMovie={handleEditMovie}
                             />
                         ))}
                     </MoviesGrid>
@@ -265,7 +319,7 @@ const PageContainer = styled.div`
 
 const Header = styled.div`
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 20px;
 `;
 
 const Title = styled.h1`
@@ -438,6 +492,148 @@ const EmptyText = styled.p`
     font-size: 1.1rem;
     margin: 0;
     color: #888;
+`;
+
+// Стили для панели фильтров
+const FiltersToggleButton = styled.button`
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 1000;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 60px;
+    justify-content: center;
+
+    &:hover {
+        background: #5a6fd8;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    span {
+        @media (max-width: 768px) {
+            display: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        top: 80px;
+        right: 15px;
+        padding: 10px 15px;
+    }
+`;
+
+const FiltersPanel = styled.div`
+    position: fixed;
+    top: 0;
+    right: ${props => props.isOpen ? '0' : '-400px'};
+    width: 400px;
+    height: 100vh;
+    background: white;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+    overflow-y: auto;
+    padding: 20px;
+    transform: ${props => props.isOpen ? 'translateX(0)' : 'translateX(100%)'};
+
+    @media (max-width: 768px) {
+        width: 100%;
+        right: ${props => props.isOpen ? '0' : '-100%'};
+        transform: ${props => props.isOpen ? 'translateX(0)' : 'translateX(100%)'};
+    }
+`;
+
+const FiltersPanelHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+
+    h3 {
+        margin: 0;
+        color: #333;
+        font-size: 20px;
+        font-weight: 600;
+    }
+`;
+
+const CloseButton = styled.button`
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #f0f0f0;
+        color: #333;
+    }
+`;
+
+const Overlay = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+`;
+
+const ActiveFiltersIndicator = styled.div`
+    position: fixed;
+    top: 95px;
+    right: 15px;
+    width: 12px;
+    height: 12px;
+    background: #ff4757;
+    border-radius: 50%;
+    border: 2px solid white;
+    animation: pulse 2s infinite;
+    z-index: 1002;
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.2);
+            opacity: 0.7;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        top: 75px;
+        right: 10px;
+    }
 `;
 
 export default MovieList;

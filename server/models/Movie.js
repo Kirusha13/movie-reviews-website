@@ -163,6 +163,7 @@ class Movie {
             description,
             country,
             language,
+            status = 'watched',
             genres = [],
             actors = []
         } = movieData;
@@ -177,16 +178,38 @@ class Movie {
                 const [result] = await connection.execute(`
                     INSERT INTO movies (title, original_title, release_year, director, 
                                      poster_url, trailer_url, duration, description, 
-                                     country, language)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                     country, language, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `, [title, original_title, release_year, director, poster_url, 
-                     trailer_url, duration, description, country, language]);
+                     trailer_url, duration, description, country, language, status]);
 
                 const movieId = result.insertId;
 
                 // Добавляем жанры
                 if (genres.length > 0) {
-                    for (const genreId of genres) {
+                    for (const genre of genres) {
+                        let genreId;
+                        if (typeof genre === 'object' && genre.name) {
+                            // Если передан объект с названием, ищем или создаем жанр
+                            const [existingGenre] = await connection.execute(
+                                'SELECT id FROM genres WHERE name = ?',
+                                [genre.name]
+                            );
+                            
+                            if (existingGenre.length > 0) {
+                                genreId = existingGenre[0].id;
+                            } else {
+                                // Создаем новый жанр
+                                const [newGenre] = await connection.execute(
+                                    'INSERT INTO genres (name) VALUES (?)',
+                                    [genre.name]
+                                );
+                                genreId = newGenre.insertId;
+                            }
+                        } else {
+                            genreId = genre; // Если передан ID
+                        }
+                        
                         await connection.execute(`
                             INSERT INTO movie_genres (movie_id, genre_id)
                             VALUES (?, ?)
@@ -197,10 +220,32 @@ class Movie {
                 // Добавляем актеров
                 if (actors.length > 0) {
                     for (const actor of actors) {
+                        let actorId;
+                        if (typeof actor === 'object' && actor.name) {
+                            // Если передан объект с названием, ищем или создаем актера
+                            const [existingActor] = await connection.execute(
+                                'SELECT id FROM actors WHERE name = ?',
+                                [actor.name]
+                            );
+                            
+                            if (existingActor.length > 0) {
+                                actorId = existingActor[0].id;
+                            } else {
+                                // Создаем нового актера
+                                const [newActor] = await connection.execute(
+                                    'INSERT INTO actors (name) VALUES (?)',
+                                    [actor.name]
+                                );
+                                actorId = newActor.insertId;
+                            }
+                        } else {
+                            actorId = actor; // Если передан ID
+                        }
+                        
                         await connection.execute(`
                             INSERT INTO movie_actors (movie_id, actor_id, role_name, is_lead)
                             VALUES (?, ?, ?, ?)
-                        `, [movieId, actor.actor_id, actor.role_name, actor.is_lead]);
+                        `, [movieId, actorId, null, false]);
                     }
                 }
 
@@ -231,6 +276,7 @@ class Movie {
             description,
             country,
             language,
+            status,
             genres = [],
             actors = []
         } = movieData;
@@ -246,15 +292,37 @@ class Movie {
                         title = ?, original_title = ?, release_year = ?, 
                         director = ?, poster_url = ?, trailer_url = ?, 
                         duration = ?, description = ?, country = ?, language = ?,
-                        updated_at = CURRENT_TIMESTAMP
+                        status = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 `, [title, original_title, release_year, director, poster_url, 
-                     trailer_url, duration, description, country, language, id]);
+                     trailer_url, duration, description, country, language, status, id]);
 
                 // Обновляем жанры
                 await connection.execute('DELETE FROM movie_genres WHERE movie_id = ?', [id]);
                 if (genres.length > 0) {
-                    for (const genreId of genres) {
+                    for (const genre of genres) {
+                        let genreId;
+                        if (typeof genre === 'object' && genre.name) {
+                            // Если передан объект с названием, ищем или создаем жанр
+                            const [existingGenre] = await connection.execute(
+                                'SELECT id FROM genres WHERE name = ?',
+                                [genre.name]
+                            );
+                            
+                            if (existingGenre.length > 0) {
+                                genreId = existingGenre[0].id;
+                            } else {
+                                // Создаем новый жанр
+                                const [newGenre] = await connection.execute(
+                                    'INSERT INTO genres (name) VALUES (?)',
+                                    [genre.name]
+                                );
+                                genreId = newGenre.insertId;
+                            }
+                        } else {
+                            genreId = genre; // Если передан ID
+                        }
+                        
                         await connection.execute(`
                             INSERT INTO movie_genres (movie_id, genre_id)
                             VALUES (?, ?)
@@ -266,10 +334,32 @@ class Movie {
                 await connection.execute('DELETE FROM movie_actors WHERE movie_id = ?', [id]);
                 if (actors.length > 0) {
                     for (const actor of actors) {
+                        let actorId;
+                        if (typeof actor === 'object' && actor.name) {
+                            // Если передан объект с названием, ищем или создаем актера
+                            const [existingActor] = await connection.execute(
+                                'SELECT id FROM actors WHERE name = ?',
+                                [actor.name]
+                            );
+                            
+                            if (existingActor.length > 0) {
+                                actorId = existingActor[0].id;
+                            } else {
+                                // Создаем нового актера
+                                const [newActor] = await connection.execute(
+                                    'INSERT INTO actors (name) VALUES (?)',
+                                    [actor.name]
+                                );
+                                actorId = newActor.insertId;
+                            }
+                        } else {
+                            actorId = actor; // Если передан ID
+                        }
+                        
                         await connection.execute(`
                             INSERT INTO movie_actors (movie_id, actor_id, role_name, is_lead)
                             VALUES (?, ?, ?, ?)
-                        `, [id, actor.actor_id, actor.role_name, actor.is_lead]);
+                        `, [id, actorId, null, false]);
                     }
                 }
 

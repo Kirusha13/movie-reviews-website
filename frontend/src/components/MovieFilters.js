@@ -156,11 +156,11 @@ const MovieFilters = ({
 
 // Styled Components
 const FiltersContainer = styled.div`
-    background: #fff;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 0;
+    box-shadow: none;
 `;
 
 const SearchSection = styled.div`
@@ -171,8 +171,9 @@ const SearchSection = styled.div`
 
 const SearchForm = styled.form`
     display: flex;
+    flex-direction: column;
     gap: 12px;
-    align-items: center;
+    align-items: stretch;
 `;
 
 const SearchInput = styled.input`
@@ -215,8 +216,8 @@ const SearchButton = styled.button`
 `;
 
 const FiltersSection = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 20px;
     margin-bottom: 20px;
 `;
