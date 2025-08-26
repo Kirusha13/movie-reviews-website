@@ -15,7 +15,6 @@ const MovieList = ({ onEditMovie }) => {
         genre: '',
         minRating: 0,
         maxRating: 10,
-        status: '',
         sortBy: 'created_at',
         sortOrder: 'DESC'
     });
@@ -80,6 +79,7 @@ const MovieList = ({ onEditMovie }) => {
 
             const response = await movieService.getMoviesWithReviews({
                 ...filters,
+                status: 'watched', // Показываем только просмотренные фильмы
                 page: pagination.page,
                 limit: pagination.limit
             });
@@ -113,6 +113,7 @@ const MovieList = ({ onEditMovie }) => {
             setError(null);
 
             const response = await movieService.searchMovies(searchQuery, {
+                status: 'watched', // Ищем только в просмотренных фильмах
                 page: 1,
                 limit: pagination.limit
             });
@@ -147,17 +148,23 @@ const MovieList = ({ onEditMovie }) => {
     };
 
     const handleAddToWatchlist = async (movieId) => {
+        console.log('🎯 MovieList: handleAddToWatchlist вызван с movieId:', movieId);
         try {
+            console.log('🎯 MovieList: Вызываем movieService.addToWatchlist...');
             const response = await movieService.addToWatchlist(movieId);
+            console.log('🎯 MovieList: Ответ от сервера:', response);
+            
             if (response.success) {
-                // Обновляем список фильмов
-                fetchMovies();
+                console.log('🎯 MovieList: Успешно! Обновляем список фильмов...');
+                // Обновляем список фильмов, чтобы показать новый статус
+                await fetchMovies();
+                console.log('🎯 MovieList: Список фильмов обновлен');
             } else {
-                setError(response.message || 'Ошибка добавления в список желаемых');
+                throw new Error(response.message || 'Ошибка добавления в список желаемых');
             }
         } catch (error) {
-            console.error('Ошибка добавления в список желаемых:', error);
-            setError('Не удалось добавить в список желаемых');
+            console.error('🎯 MovieList: Ошибка добавления в список желаемых:', error);
+            setError('Не удалось добавить фильм в список желаемых');
         }
     };
 
@@ -165,14 +172,14 @@ const MovieList = ({ onEditMovie }) => {
         try {
             const response = await movieService.removeFromWatchlist(movieId);
             if (response.success) {
-                // Обновляем список фильмов
-                fetchMovies();
+                // Обновляем список фильмов, чтобы показать новый статус
+                await fetchMovies();
             } else {
-                setError(response.message || 'Ошибка удаления из списка желаемых');
+                throw new Error(response.message || 'Ошибка удаления из списка желаемых');
             }
         } catch (error) {
             console.error('Ошибка удаления из списка желаемых:', error);
-            setError('Не удалось убрать из списка желаемых');
+            setError('Не удалось убрать фильм из списка желаемых');
         }
     };
 
@@ -196,6 +203,8 @@ const MovieList = ({ onEditMovie }) => {
             setError('Не удалось удалить фильм');
         }
     };
+
+
 
     const toggleFiltersPanel = () => {
         setIsFiltersPanelOpen(!isFiltersPanelOpen);

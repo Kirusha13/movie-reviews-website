@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from
 import MovieList from './pages/MovieList';
 import MovieForm from './components/MovieForm';
 import MovieDetail from './pages/MovieDetail';
+import WatchlistPage from './pages/WatchlistPage';
 import ToastContainer from './components/ToastContainer';
 import useToast from './hooks/useToast';
 
@@ -148,12 +149,17 @@ const AppContent = () => {
           <Logo onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>🎬 Movie Reviews</Logo>
                       <Nav>
               <NavButton 
+                active={isActiveRoute('/watchlist')} 
+                onClick={() => navigate('/watchlist')}
+              >
+                📋 Список желаемых
+              </NavButton>
+              <NavButton 
                 active={isActiveRoute('/add-movie')} 
                 onClick={() => handleAddMovie()}
               >
                 Добавить фильм
               </NavButton>
-
             </Nav>
         </HeaderContent>
       </Header>
@@ -162,6 +168,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<MovieList onEditMovie={handleEditMovie} />} />
           <Route path="/movie/:id" element={<MovieDetail />} />
+          <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/add-movie" element={
             <MovieForm
               movie={null}

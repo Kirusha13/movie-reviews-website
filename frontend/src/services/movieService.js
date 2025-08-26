@@ -97,16 +97,45 @@ class MovieService {
     }
 
     // Получить список желаемых фильмов
-    async getWatchlist() {
-        return this.request('/movies/watchlist');
+    async getWatchlist(filters = {}) {
+        console.log('🔧 movieService: getWatchlist вызван с фильтрами:', filters);
+        
+        const queryParams = new URLSearchParams();
+        
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                queryParams.append(key, value);
+            }
+        });
+
+        const endpoint = `/movies/watchlist?${queryParams.toString()}`;
+        console.log('🔧 movieService: Отправляем запрос на:', endpoint);
+        
+        try {
+            const response = await this.request(endpoint);
+            console.log('🔧 movieService: Ответ от getWatchlist:', response);
+            return response;
+        } catch (error) {
+            console.error('🔧 movieService: Ошибка в getWatchlist:', error);
+            throw error;
+        }
     }
 
     // Добавить фильм в список желаемых
-    async addToWatchlist(movieId, priority = 'medium', notes = '') {
-        return this.request(`/movies/${movieId}/watchlist`, {
-            method: 'POST',
-            body: JSON.stringify({ priority, notes }),
-        });
+    async addToWatchlist(movieId) {
+        console.log('🔧 movieService: addToWatchlist вызван с movieId:', movieId);
+        console.log('🔧 movieService: Отправляем запрос на:', `/movies/${movieId}/watchlist`);
+        
+        try {
+            const response = await this.request(`/movies/${movieId}/watchlist`, {
+                method: 'POST',
+            });
+            console.log('🔧 movieService: Ответ от сервера:', response);
+            return response;
+        } catch (error) {
+            console.error('🔧 movieService: Ошибка в addToWatchlist:', error);
+            throw error;
+        }
     }
 
     // Убрать фильм из списка желаемых

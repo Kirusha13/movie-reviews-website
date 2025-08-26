@@ -32,7 +32,7 @@ const MovieFilters = ({
             genre: '',
             minRating: 0,
             maxRating: 10,
-            status: '',
+            status: localFilters.status || '', // Сохраняем текущий статус
             sortBy: 'created_at',
             sortOrder: 'DESC'
         };
@@ -106,17 +106,7 @@ const MovieFilters = ({
                     </RatingRange>
                 </FilterGroup>
 
-                <FilterGroup>
-                    <FilterLabel>Статус:</FilterLabel>
-                    <FilterSelect
-                        value={localFilters.status || ''}
-                        onChange={(e) => handleFilterChange('status', e.target.value)}
-                    >
-                        <option value="">Все фильмы</option>
-                        <option value="watched">Просмотренные</option>
-                        <option value="watchlist">В списке желаемых</option>
-                    </FilterSelect>
-                </FilterGroup>
+
 
                 <FilterGroup>
                     <FilterLabel>Сортировка:</FilterLabel>
@@ -158,7 +148,7 @@ const MovieFilters = ({
 const FiltersContainer = styled.div`
     background: transparent;
     border-radius: 0;
-    padding: 0;
+    padding: 20px;
     margin-bottom: 0;
     box-shadow: none;
 `;

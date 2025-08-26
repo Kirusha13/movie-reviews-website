@@ -128,6 +128,40 @@ const MovieDetail = () => {
         setReviewToEdit(null);
     };
 
+    // Добавить фильм в список желаемых
+    const handleAddToWatchlist = async () => {
+        try {
+            const response = await movieService.addToWatchlist(movie.id);
+            if (response.success) {
+                showLocalSuccess('Фильм добавлен в список желаемых!');
+                // Обновляем данные фильма
+                await fetchMovieDetails();
+            } else {
+                throw new Error(response.message || 'Ошибка добавления в список желаемых');
+            }
+        } catch (error) {
+            console.error('Ошибка добавления в список желаемых:', error);
+            showLocalError(`Не удалось добавить фильм в список желаемых: ${error.message}`);
+        }
+    };
+
+    // Убрать фильм из списка желаемых
+    const handleRemoveFromWatchlist = async () => {
+        try {
+            const response = await movieService.removeFromWatchlist(movie.id);
+            if (response.success) {
+                showLocalSuccess('Фильм убран из списка желаемых!');
+                // Обновляем данные фильма
+                await fetchMovieDetails();
+            } else {
+                throw new Error(response.message || 'Ошибка удаления из списка желаемых');
+            }
+        } catch (error) {
+            console.error('Ошибка удаления из списка желаемых:', error);
+            showLocalError(`Не удалось убрать фильм из списка желаемых: ${error.message}`);
+        }
+    };
+
     const handleSubmitReview = async (reviewData) => {
         try {
 
@@ -291,6 +325,25 @@ const MovieDetail = () => {
                                     <DescriptionText>{movie.description}</DescriptionText>
                                 </DescriptionSection>
                             )}
+
+                            {/* Кнопка Watchlist */}
+                            <WatchlistSection>
+                                {movie.status === 'watchlist' ? (
+                                    <WatchlistButton 
+                                        onClick={handleRemoveFromWatchlist}
+                                        type="remove"
+                                    >
+                                        ❌ Убрать из списка желаемых
+                                    </WatchlistButton>
+                                ) : (
+                                    <WatchlistButton 
+                                        onClick={handleAddToWatchlist}
+                                        type="add"
+                                    >
+                                        📋 Добавить в список желаемых
+                                    </WatchlistButton>
+                                )}
+                            </WatchlistSection>
                         </MovieInfo>
                     </MovieHeader>
 
@@ -510,6 +563,36 @@ const DescriptionText = styled.p`
     margin: 0;
     line-height: 1.6;
     color: #555;
+`;
+
+const WatchlistSection = styled.div`
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ecf0f1;
+`;
+
+const WatchlistButton = styled.button`
+    background: ${props => props.type === 'remove' ? '#e74c3c' : '#3498db'};
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 300px;
+
+    &:hover {
+        background: ${props => props.type === 'remove' ? '#c0392b' : '#2980b9'};
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
 `;
 
 const SectionTitle = styled.h3`
