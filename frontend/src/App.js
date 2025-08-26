@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from
 import MovieList from './pages/MovieList';
 import MovieForm from './components/MovieForm';
 import MovieDetail from './pages/MovieDetail';
+import ToastContainer from './components/ToastContainer';
+import useToast from './hooks/useToast';
 
 import { movieService } from './services/movieService';
 import { genreService } from './services/genreService';
@@ -17,6 +19,7 @@ const AppContent = () => {
   const [genres, setGenres] = useState([]);
   const [actors, setActors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toasts, showSuccess, showError, hideToast } = useToast();
 
   const handleAddMovie = () => {
     setEditingMovie(null);
@@ -90,7 +93,7 @@ const AppContent = () => {
         setEditingMovie(null);
         
         // Уведомление об успехе
-        alert(editingMovie ? 'Фильм успешно обновлен!' : 'Фильм успешно добавлен!');
+        showSuccess(editingMovie ? 'Фильм успешно обновлен!' : 'Фильм успешно добавлен!');
         
         // Обновляем список фильмов
         // TODO: Добавить функцию обновления списка без перезагрузки страницы
@@ -99,7 +102,7 @@ const AppContent = () => {
       }
     } catch (error) {
       console.error('Ошибка при сохранении фильма:', error);
-      alert(`Произошла ошибка при сохранении фильма: ${error.message}`);
+      showError(`Произошла ошибка при сохранении фильма: ${error.message}`);
     }
   };
 
@@ -192,6 +195,9 @@ const AppContent = () => {
 
         </Routes>
       </MainContent>
+      
+      {/* Toast уведомления */}
+      <ToastContainer toasts={toasts} onHideToast={hideToast} />
     </AppContainer>
   );
 };

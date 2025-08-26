@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { genreService } from '../services/genreService';
 import { actorService } from '../services/actorService';
+import useToast from '../hooks/useToast';
 
 const MovieForm = ({ 
     movie = null, 
@@ -37,6 +38,7 @@ const MovieForm = ({
     const [newActor, setNewActor] = useState({ name: '', biography: '', birth_date: '', photo_url: '' });
     const [isCreatingGenre, setIsCreatingGenre] = useState(false);
     const [isCreatingActor, setIsCreatingActor] = useState(false);
+    const { showSuccess, showError } = useToast();
 
     // Заполняем форму данными фильма при редактировании
     useEffect(() => {
@@ -108,11 +110,11 @@ const MovieForm = ({
                 }
                 setShowGenreModal(false);
                 setNewGenre({ name: '', description: '' });
-                alert('Жанр успешно добавлен!');
+                showSuccess('Жанр успешно добавлен!');
             }
         } catch (error) {
             console.error('Ошибка создания жанра:', error);
-            alert(`Ошибка создания жанра: ${error.message}`);
+            showError(`Ошибка создания жанра: ${error.message}`);
         } finally {
             setIsCreatingGenre(false);
         }
@@ -131,11 +133,11 @@ const MovieForm = ({
                 }
                 setShowActorModal(false);
                 setNewActor({ name: '', biography: '', birth_date: '', photo_url: '' });
-                alert('Актер успешно добавлен!');
+                showSuccess('Актер успешно добавлен!');
             }
         } catch (error) {
             console.error('Ошибка создания актера:', error);
-            alert(`Ошибка создания актера: ${error.message}`);
+            showError(`Ошибка создания актера: ${error.message}`);
         } finally {
             setIsCreatingActor(false);
         }
@@ -407,7 +409,10 @@ const MovieForm = ({
                 <FormSection>
                     <SectionTitle>
                         Жанры
-                        <AddButton type="button" onClick={() => setShowGenreModal(true)}>
+                        <AddButton type="button" onClick={(e) => {
+                            e.stopPropagation();
+                            setShowGenreModal(true);
+                        }}>
                             + Добавить жанр
                         </AddButton>
                     </SectionTitle>
@@ -443,7 +448,10 @@ const MovieForm = ({
                 <FormSection>
                     <SectionTitle>
                         Актеры
-                        <AddButton type="button" onClick={() => setShowActorModal(true)}>
+                        <AddButton type="button" onClick={(e) => {
+                            e.stopPropagation();
+                            setShowActorModal(true);
+                        }}>
                             + Добавить актера
                         </AddButton>
                     </SectionTitle>
@@ -488,11 +496,14 @@ const MovieForm = ({
 
             {/* Модальное окно для добавления жанра */}
             {showGenreModal && (
-                <Modal>
-                    <ModalContent>
+                <Modal onClick={(e) => e.stopPropagation()}>
+                    <ModalContent onClick={(e) => e.stopPropagation()}>
                         <ModalHeader>
                             <ModalTitle>Добавить новый жанр</ModalTitle>
-                            <CloseButton onClick={() => setShowGenreModal(false)}>&times;</CloseButton>
+                            <CloseButton onClick={(e) => {
+                                e.stopPropagation();
+                                setShowGenreModal(false);
+                            }}>&times;</CloseButton>
                         </ModalHeader>
                         <ModalBody>
                             <FormGroup>
@@ -517,10 +528,16 @@ const MovieForm = ({
                             </FormGroup>
                         </ModalBody>
                         <ModalFooter>
-                            <CancelButton type="button" onClick={() => setShowGenreModal(false)}>
+                            <CancelButton type="button" onClick={(e) => {
+                                e.stopPropagation();
+                                setShowGenreModal(false);
+                            }}>
                                 Отмена
                             </CancelButton>
-                            <SubmitButton type="button" onClick={handleCreateGenre} disabled={isCreatingGenre}>
+                            <SubmitButton type="button" onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateGenre();
+                            }} disabled={isCreatingGenre}>
                                 {isCreatingGenre ? 'Добавление...' : 'Добавить'}
                             </SubmitButton>
                         </ModalFooter>
@@ -530,11 +547,14 @@ const MovieForm = ({
 
             {/* Модальное окно для добавления актера */}
             {showActorModal && (
-                <Modal>
-                    <ModalContent>
+                <Modal onClick={(e) => e.stopPropagation()}>
+                    <ModalContent onClick={(e) => e.stopPropagation()}>
                         <ModalHeader>
                             <ModalTitle>Добавить нового актера</ModalTitle>
-                            <CloseButton onClick={() => setShowActorModal(false)}>&times;</CloseButton>
+                            <CloseButton onClick={(e) => {
+                                e.stopPropagation();
+                                setShowActorModal(false);
+                            }}>&times;</CloseButton>
                         </ModalHeader>
                         <ModalBody>
                             <FormGroup>
@@ -580,10 +600,16 @@ const MovieForm = ({
                             </FormRow>
                         </ModalBody>
                         <ModalFooter>
-                            <CancelButton type="button" onClick={() => setShowActorModal(false)}>
+                            <CancelButton type="button" onClick={(e) => {
+                                e.stopPropagation();
+                                setShowActorModal(false);
+                            }}>
                                 Отмена
                             </CancelButton>
-                            <SubmitButton type="button" onClick={handleCreateActor} disabled={isCreatingActor}>
+                            <SubmitButton type="button" onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateActor();
+                            }} disabled={isCreatingActor}>
                                 {isCreatingActor ? 'Добавление...' : 'Добавить'}
                             </SubmitButton>
                         </ModalFooter>

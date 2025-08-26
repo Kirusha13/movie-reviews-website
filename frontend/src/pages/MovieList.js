@@ -182,6 +182,21 @@ const MovieList = ({ onEditMovie }) => {
         }
     };
 
+    const handleDeleteMovie = async (movieId) => {
+        try {
+            const response = await movieService.deleteMovie(movieId);
+            if (response.success) {
+                // Обновляем список фильмов
+                fetchMovies();
+            } else {
+                setError(response.message || 'Ошибка удаления фильма');
+            }
+        } catch (error) {
+            console.error('Ошибка удаления фильма:', error);
+            setError('Не удалось удалить фильм');
+        }
+    };
+
     const toggleFiltersPanel = () => {
         setIsFiltersPanelOpen(!isFiltersPanelOpen);
     };
@@ -260,6 +275,7 @@ const MovieList = ({ onEditMovie }) => {
                                 onAddToWatchlist={handleAddToWatchlist}
                                 onRemoveFromWatchlist={handleRemoveFromWatchlist}
                                 onEditMovie={handleEditMovie}
+                                onDeleteMovie={handleDeleteMovie}
                             />
                         ))}
                     </MoviesGrid>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import ConfirmDialog from './ConfirmDialog';
 
 // Функция для определения цвета оценки
 const getRatingColor = (rating) => {
@@ -10,11 +11,24 @@ const getRatingColor = (rating) => {
     return '#F44336'; // Красный для очень низких
 };
 
-const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlist, onEditMovie }) => {
+const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlist, onEditMovie, onDeleteMovie }) => {
     const [isHovered, setIsHovered] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleMouseEnter = () => setIsHovered(true);
     const handleMouseLeave = () => setIsHovered(false);
+    
+    const handleDeleteClick = (e) => {
+        e.stopPropagation();
+        setShowDeleteConfirm(true);
+    };
+    
+    const handleConfirmDelete = () => {
+        if (onDeleteMovie && movie.id) {
+            onDeleteMovie(movie.id);
+        }
+        setShowDeleteConfirm(false);
+    };
 
     const formatDuration = (minutes) => {
         const numMinutes = Number(minutes) || 0;
@@ -28,7 +42,12 @@ const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlis
         <CardContainer
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            onClick={() => onMovieClick && onMovieClick(movie)}
+            onClick={() => {
+                // Не переходим на детальную страницу, если открыт диалог подтверждения
+                if (!showDeleteConfirm && onMovieClick) {
+                    onMovieClick(movie);
+                }
+            }}
         >
             <PosterContainer>
                 <Poster 
@@ -120,9 +139,30 @@ const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlis
                                     В список желаемых
                                 </AddButton>
                             )}
+                            
+                            <DeleteButton onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(e);
+                            }}>
+                                🗑️ Удалить
+                            </DeleteButton>
                         </ActionButtons>
                     </HoverContent>
                 </HoverOverlay>
+            )}
+            
+            {/* Диалог подтверждения удаления */}
+            {showDeleteConfirm && (
+                <ConfirmDialog
+                    isOpen={showDeleteConfirm}
+                    title="Удалить фильм"
+                    message={`Вы уверены, что хотите удалить фильм "${movie.title}"? Это действие нельзя отменить.`}
+                    confirmText="Удалить"
+                    cancelText="Отмена"
+                    type="danger"
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setShowDeleteConfirm(false)}
+                />
             )}
         </CardContainer>
     );
@@ -375,6 +415,22 @@ const RemoveButton = styled.button`
 
     &:hover {
         background: #da190b;
+    }
+`;
+
+const DeleteButton = styled.button`
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: #c82333;
     }
 `;
 
