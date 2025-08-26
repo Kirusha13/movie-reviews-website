@@ -128,6 +128,7 @@ class MovieService {
 
     // Создать рецензию
     async createReview(movieId, reviewData) {
+        console.log('movieService.createReview:', { movieId, reviewData });
         return this.request(`/reviews/movie/${movieId}`, {
             method: 'POST',
             body: JSON.stringify(reviewData),

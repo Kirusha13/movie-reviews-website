@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { genreService } from '../services/genreService';
+import { actorService } from '../services/actorService';
 
 const MovieForm = ({ 
     movie = null, 
@@ -7,7 +9,9 @@ const MovieForm = ({
     onCancel, 
     isEditing = false,
     genres = [],
-    actors = []
+    actors = [],
+    isLoading = false,
+    onRefreshGenresAndActors
 }) => {
     const [formData, setFormData] = useState({
         title: '',
@@ -27,6 +31,12 @@ const MovieForm = ({
 
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showGenreModal, setShowGenreModal] = useState(false);
+    const [showActorModal, setShowActorModal] = useState(false);
+    const [newGenre, setNewGenre] = useState({ name: '', description: '' });
+    const [newActor, setNewActor] = useState({ name: '', biography: '', birth_date: '', photo_url: '' });
+    const [isCreatingGenre, setIsCreatingGenre] = useState(false);
+    const [isCreatingActor, setIsCreatingActor] = useState(false);
 
     // Заполняем форму данными фильма при редактировании
     useEffect(() => {
@@ -66,21 +76,69 @@ const MovieForm = ({
     };
 
     const handleGenreChange = (genre) => {
+        const genreName = typeof genre === 'string' ? genre : (genre.name || genre);
         setFormData(prev => ({
             ...prev,
-            selectedGenres: prev.selectedGenres.includes(genre)
-                ? prev.selectedGenres.filter(g => g !== genre)
-                : [...prev.selectedGenres, genre]
+            selectedGenres: prev.selectedGenres.includes(genreName)
+                ? prev.selectedGenres.filter(g => g !== genreName)
+                : [...prev.selectedGenres, genreName]
         }));
     };
 
     const handleActorChange = (actor) => {
+        const actorName = typeof actor === 'string' ? actor : (actor.name || actor);
         setFormData(prev => ({
             ...prev,
-            selectedActors: prev.selectedActors.includes(actor)
-                ? prev.selectedActors.filter(a => a !== actor)
-                : [...prev.selectedActors, actor]
+            selectedActors: prev.selectedActors.includes(actorName)
+                ? prev.selectedActors.filter(a => a !== actorName)
+                : [...prev.selectedActors, actorName]
         }));
+    };
+
+    const handleCreateGenre = async () => {
+        if (!newGenre.name.trim()) return;
+        
+        setIsCreatingGenre(true);
+        try {
+            const response = await genreService.createGenre(newGenre);
+            if (response.success) {
+                // Обновляем список жанров в родительском компоненте
+                if (onRefreshGenresAndActors) {
+                    await onRefreshGenresAndActors();
+                }
+                setShowGenreModal(false);
+                setNewGenre({ name: '', description: '' });
+                alert('Жанр успешно добавлен!');
+            }
+        } catch (error) {
+            console.error('Ошибка создания жанра:', error);
+            alert(`Ошибка создания жанра: ${error.message}`);
+        } finally {
+            setIsCreatingGenre(false);
+        }
+    };
+
+    const handleCreateActor = async () => {
+        if (!newActor.name.trim()) return;
+        
+        setIsCreatingActor(true);
+        try {
+            const response = await actorService.createActor(newActor);
+            if (response.success) {
+                // Обновляем список актеров в родительском компоненте
+                if (onRefreshGenresAndActors) {
+                    await onRefreshGenresAndActors();
+                }
+                setShowActorModal(false);
+                setNewActor({ name: '', biography: '', birth_date: '', photo_url: '' });
+                alert('Актер успешно добавлен!');
+            }
+        } catch (error) {
+            console.error('Ошибка создания актера:', error);
+            alert(`Ошибка создания актера: ${error.message}`);
+        } finally {
+            setIsCreatingActor(false);
+        }
     };
 
     const validateForm = () => {
@@ -347,41 +405,75 @@ const MovieForm = ({
                 </FormSection>
 
                 <FormSection>
-                    <SectionTitle>Жанры</SectionTitle>
-                    <GenresGrid>
-                        {genres.map(genre => (
-                            <GenreCheckbox key={genre.id || genre}>
-                                <input
-                                    type="checkbox"
-                                    id={`genre-${genre.id || genre}`}
-                                    checked={formData.selectedGenres.includes(genre.name || genre)}
-                                    onChange={() => handleGenreChange(genre.name || genre)}
-                                />
-                                <label htmlFor={`genre-${genre.id || genre}`}>
-                                    {genre.name || genre}
-                                </label>
-                            </GenreCheckbox>
-                        ))}
-                    </GenresGrid>
+                    <SectionTitle>
+                        Жанры
+                        <AddButton type="button" onClick={() => setShowGenreModal(true)}>
+                            + Добавить жанр
+                        </AddButton>
+                    </SectionTitle>
+                    {isLoading ? (
+                        <LoadingText>Загрузка жанров...</LoadingText>
+                    ) : (
+                        <GenresGrid>
+                            {Array.isArray(genres) && genres.length > 0 ? (
+                                genres.map(genre => {
+                                    const genreId = genre.id || genre;
+                                    const genreName = genre.name || genre;
+                                    return (
+                                        <GenreCheckbox key={genreId}>
+                                            <input
+                                                type="checkbox"
+                                                id={`genre-${genreId}`}
+                                                checked={formData.selectedGenres.includes(genreName)}
+                                                onChange={() => handleGenreChange(genre)}
+                                            />
+                                            <label htmlFor={`genre-${genreId}`}>
+                                                {genreName}
+                                            </label>
+                                        </GenreCheckbox>
+                                    );
+                                })
+                            ) : (
+                                <LoadingText>Жанры не найдены</LoadingText>
+                            )}
+                        </GenresGrid>
+                    )}
                 </FormSection>
 
                 <FormSection>
-                    <SectionTitle>Актеры</SectionTitle>
-                    <GenresGrid>
-                        {actors.map(actor => (
-                            <GenreCheckbox key={actor.id || actor}>
-                                <input
-                                    type="checkbox"
-                                    id={`actor-${actor.id || actor}`}
-                                    checked={formData.selectedActors.includes(actor.name || actor)}
-                                    onChange={() => handleActorChange(actor.name || actor)}
-                                />
-                                <label htmlFor={`actor-${actor.id || actor}`}>
-                                    {actor.name || actor}
-                                </label>
-                            </GenreCheckbox>
-                        ))}
-                    </GenresGrid>
+                    <SectionTitle>
+                        Актеры
+                        <AddButton type="button" onClick={() => setShowActorModal(true)}>
+                            + Добавить актера
+                        </AddButton>
+                    </SectionTitle>
+                    {isLoading ? (
+                        <LoadingText>Загрузка актеров...</LoadingText>
+                    ) : (
+                        <GenresGrid>
+                            {Array.isArray(actors) && actors.length > 0 ? (
+                                actors.map(actor => {
+                                    const actorId = actor.id || actor;
+                                    const actorName = actor.name || actor;
+                                    return (
+                                        <GenreCheckbox key={actorId}>
+                                            <input
+                                                type="checkbox"
+                                                id={`actor-${actorId}`}
+                                                checked={formData.selectedActors.includes(actorName)}
+                                                onChange={() => handleActorChange(actor)}
+                                            />
+                                            <label htmlFor={`actor-${actorId}`}>
+                                                {actorName}
+                                            </label>
+                                        </GenreCheckbox>
+                                    );
+                                })
+                            ) : (
+                                <LoadingText>Актеры не найдены</LoadingText>
+                            )}
+                        </GenresGrid>
+                    )}
                 </FormSection>
 
                 <ButtonGroup>
@@ -393,6 +485,111 @@ const MovieForm = ({
                     </SubmitButton>
                 </ButtonGroup>
             </Form>
+
+            {/* Модальное окно для добавления жанра */}
+            {showGenreModal && (
+                <Modal>
+                    <ModalContent>
+                        <ModalHeader>
+                            <ModalTitle>Добавить новый жанр</ModalTitle>
+                            <CloseButton onClick={() => setShowGenreModal(false)}>&times;</CloseButton>
+                        </ModalHeader>
+                        <ModalBody>
+                            <FormGroup>
+                                <Label htmlFor="genre-name">Название жанра *</Label>
+                                <Input
+                                    type="text"
+                                    id="genre-name"
+                                    value={newGenre.name}
+                                    onChange={(e) => setNewGenre(prev => ({ ...prev, name: e.target.value }))}
+                                    placeholder="Введите название жанра"
+                                />
+                            </FormGroup>
+                            <FormGroup>
+                                <Label htmlFor="genre-description">Описание</Label>
+                                <Textarea
+                                    id="genre-description"
+                                    value={newGenre.description}
+                                    onChange={(e) => setNewGenre(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder="Краткое описание жанра"
+                                    rows="3"
+                                />
+                            </FormGroup>
+                        </ModalBody>
+                        <ModalFooter>
+                            <CancelButton type="button" onClick={() => setShowGenreModal(false)}>
+                                Отмена
+                            </CancelButton>
+                            <SubmitButton type="button" onClick={handleCreateGenre} disabled={isCreatingGenre}>
+                                {isCreatingGenre ? 'Добавление...' : 'Добавить'}
+                            </SubmitButton>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+            )}
+
+            {/* Модальное окно для добавления актера */}
+            {showActorModal && (
+                <Modal>
+                    <ModalContent>
+                        <ModalHeader>
+                            <ModalTitle>Добавить нового актера</ModalTitle>
+                            <CloseButton onClick={() => setShowActorModal(false)}>&times;</CloseButton>
+                        </ModalHeader>
+                        <ModalBody>
+                            <FormGroup>
+                                <Label htmlFor="actor-name">Имя актера *</Label>
+                                <Input
+                                    type="text"
+                                    id="actor-name"
+                                    value={newActor.name}
+                                    onChange={(e) => setNewActor(prev => ({ ...prev, name: e.target.value }))}
+                                    placeholder="Введите имя актера"
+                                />
+                            </FormGroup>
+                            <FormGroup>
+                                <Label htmlFor="actor-biography">Биография</Label>
+                                <Textarea
+                                    id="actor-biography"
+                                    value={newActor.biography}
+                                    onChange={(e) => setNewActor(prev => ({ ...prev, biography: e.target.value }))}
+                                    placeholder="Краткая биография актера"
+                                    rows="3"
+                                />
+                            </FormGroup>
+                            <FormRow>
+                                <FormGroup>
+                                    <Label htmlFor="actor-birth-date">Дата рождения</Label>
+                                    <Input
+                                        type="date"
+                                        id="actor-birth-date"
+                                        value={newActor.birth_date}
+                                        onChange={(e) => setNewActor(prev => ({ ...prev, birth_date: e.target.value }))}
+                                    />
+                                </FormGroup>
+                                <FormGroup>
+                                    <Label htmlFor="actor-photo-url">URL фото</Label>
+                                    <Input
+                                        type="url"
+                                        id="actor-photo-url"
+                                        value={newActor.photo_url}
+                                        onChange={(e) => setNewActor(prev => ({ ...prev, photo_url: e.target.value }))}
+                                        placeholder="https://example.com/photo.jpg"
+                                    />
+                                </FormGroup>
+                            </FormRow>
+                        </ModalBody>
+                        <ModalFooter>
+                            <CancelButton type="button" onClick={() => setShowActorModal(false)}>
+                                Отмена
+                            </CancelButton>
+                            <SubmitButton type="button" onClick={handleCreateActor} disabled={isCreatingActor}>
+                                {isCreatingActor ? 'Добавление...' : 'Добавить'}
+                            </SubmitButton>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+            )}
         </FormContainer>
     );
 };
@@ -435,6 +632,9 @@ const SectionTitle = styled.h3`
     font-weight: 500;
     border-bottom: 2px solid #667eea;
     padding-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 `;
 
 const FormRow = styled.div`
@@ -585,6 +785,90 @@ const CancelButton = styled(Button)`
         background: #e9ecef;
         color: #333;
     }
+`;
+
+const AddButton = styled.button`
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-left: 15px;
+    
+    &:hover {
+        background: #218838;
+    }
+`;
+
+const LoadingText = styled.div`
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+`;
+
+const Modal = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+`;
+
+const ModalHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+`;
+
+const ModalTitle = styled.h3`
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+`;
+
+const CloseButton = styled.button`
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    
+    &:hover {
+        color: #333;
+    }
+`;
+
+const ModalBody = styled.div`
+    padding: 20px;
+`;
+
+const ModalFooter = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
 `;
 
 export default MovieForm;

@@ -1,28 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import MovieList from './pages/MovieList';
 import MovieForm from './components/MovieForm';
+import MovieDetail from './pages/MovieDetail';
+
 import { movieService } from './services/movieService';
+import { genreService } from './services/genreService';
+import { actorService } from './services/actorService';
 import './App.css';
 
-const App = () => {
-  const [currentView, setCurrentView] = useState('list'); // 'list' или 'form'
+const AppContent = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [editingMovie, setEditingMovie] = useState(null);
+  const [genres, setGenres] = useState([]);
+  const [actors, setActors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleAddMovie = () => {
     setEditingMovie(null);
-    setCurrentView('form');
+    navigate('/add-movie');
   };
 
   const handleEditMovie = (movie) => {
     setEditingMovie(movie);
-    setCurrentView('form');
+    navigate('/edit-movie');
   };
 
   const handleCancelForm = () => {
-    setCurrentView('list');
-    setEditingMovie(null);
+    navigate('/');
   };
+
+  // Загружаем жанры и актеры при монтировании компонента
+  useEffect(() => {
+    const loadGenresAndActors = async () => {
+      try {
+        setIsLoading(true);
+        const [genresData, actorsData] = await Promise.all([
+          genreService.getAllGenres(),
+          actorService.getAllActors()
+        ]);
+        
+        console.log('Загруженные жанры:', genresData);
+        console.log('Загруженные актеры:', actorsData);
+        
+        // Проверяем, что данные являются массивами
+        if (Array.isArray(genresData)) {
+          setGenres(genresData);
+        } else {
+          console.error('Жанры не являются массивом:', genresData);
+          setGenres([]);
+        }
+        
+        if (Array.isArray(actorsData)) {
+          setActors(actorsData);
+        } else {
+          console.error('Актеры не являются массивом:', actorsData);
+          setActors([]);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки жанров и актеров:', error);
+        setGenres([]);
+        setActors([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadGenresAndActors();
+  }, []);
 
   const handleSubmitMovie = async (movieData) => {
     try {
@@ -39,7 +86,7 @@ const App = () => {
       
       if (response.success) {
         // После успешной отправки возвращаемся к списку
-        setCurrentView('list');
+        navigate('/');
         setEditingMovie(null);
         
         // Уведомление об успехе
@@ -56,50 +103,104 @@ const App = () => {
     }
   };
 
+  const refreshGenresAndActors = async () => {
+    try {
+      const [genresData, actorsData] = await Promise.all([
+        genreService.getAllGenres(),
+        actorService.getAllActors()
+      ]);
+      
+      console.log('Обновленные жанры:', genresData);
+      console.log('Обновленные актеры:', actorsData);
+      
+      // Проверяем, что данные являются массивами
+      if (Array.isArray(genresData)) {
+        setGenres(genresData);
+      } else {
+        console.error('Жанры не являются массивом:', genresData);
+        setGenres([]);
+      }
+      
+      if (Array.isArray(actorsData)) {
+        setActors(actorsData);
+      } else {
+        console.error('Актеры не являются массивом:', actorsData);
+        setActors([]);
+      }
+    } catch (error) {
+      console.error('Ошибка обновления жанров и актеров:', error);
+      setGenres([]);
+      setActors([]);
+    }
+  };
+
+  const isActiveRoute = (path) => {
+    return location.pathname === path;
+  };
+
   return (
     <AppContainer>
       <Header>
         <HeaderContent>
           <Logo>🎬 Movie Reviews</Logo>
-          <Nav>
-            <NavButton 
-              active={currentView === 'list'} 
-              onClick={() => setCurrentView('list')}
-            >
-              Список фильмов
-            </NavButton>
-            <NavButton 
-              active={currentView === 'form'} 
-              onClick={() => handleAddMovie()}
-            >
-              Добавить фильм
-            </NavButton>
-          </Nav>
+                      <Nav>
+              <NavButton 
+                active={isActiveRoute('/')} 
+                onClick={() => navigate('/')}
+              >
+                Список фильмов
+              </NavButton>
+              <NavButton 
+                active={isActiveRoute('/add-movie')} 
+                onClick={() => handleAddMovie()}
+              >
+                Добавить фильм
+              </NavButton>
+
+            </Nav>
         </HeaderContent>
       </Header>
 
       <MainContent>
-        {currentView === 'list' ? (
-          <MovieList onEditMovie={handleEditMovie} />
-        ) : (
-          <MovieForm
-            movie={editingMovie}
-            onSubmit={handleSubmitMovie}
-            onCancel={handleCancelForm}
-            isEditing={!!editingMovie}
-            genres={[
-              'Боевик', 'Комедия', 'Драма', 'Ужасы', 'Фантастика', 
-              'Триллер', 'Романтика', 'Документальный', 'Анимация', 
-              'Криминал', 'Приключения', 'Семейный'
-            ]}
-            actors={[
-              'Том Хэнкс', 'Роберт Дауни мл.', 'Леонардо ДиКаприо', 
-              'Морган Фриман', 'Джонни Депп', 'Брэд Питт'
-            ]}
-          />
-        )}
+        <Routes>
+          <Route path="/" element={<MovieList onEditMovie={handleEditMovie} />} />
+          <Route path="/movie/:id" element={<MovieDetail />} />
+          <Route path="/add-movie" element={
+            <MovieForm
+              movie={null}
+              onSubmit={handleSubmitMovie}
+              onCancel={handleCancelForm}
+              isEditing={false}
+              genres={genres}
+              actors={actors}
+              isLoading={isLoading}
+              onRefreshGenresAndActors={refreshGenresAndActors}
+            />
+          } />
+          <Route path="/edit-movie" element={
+            <MovieForm
+              movie={editingMovie}
+              onSubmit={handleSubmitMovie}
+              onCancel={handleCancelForm}
+              isEditing={true}
+              genres={genres}
+              actors={actors}
+              isLoading={isLoading}
+              onRefreshGenresAndActors={refreshGenresAndActors}
+            />
+          } />
+
+        </Routes>
       </MainContent>
     </AppContainer>
+  );
+};
+
+const App = () => {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 };
 

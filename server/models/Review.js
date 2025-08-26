@@ -19,7 +19,8 @@ class Review {
     // Получить рецензию по ID
     static async getById(id) {
         try {
-            const [review] = await query('SELECT * FROM reviews WHERE id = ?', [id]);
+            const reviews = await query('SELECT * FROM reviews WHERE id = ?', [id]);
+        const review = reviews[0] || null;
             return review || null;
         } catch (error) {
             throw new Error(`Ошибка получения рецензии: ${error.message}`);
@@ -51,7 +52,7 @@ class Review {
                 throw new Error('Оценка должна быть от 1 до 10');
             }
 
-            const [result] = await query(`
+            const result = await query(`
                 INSERT INTO reviews (movie_id, reviewer_name, rating, review_text)
                 VALUES (?, ?, ?, ?)
             `, [movie_id, reviewer_name, rating, review_text]);
@@ -64,22 +65,54 @@ class Review {
 
     // Обновить рецензию
     static async update(id, reviewData) {
-        const {
-            rating,
-            review_text
-        } = reviewData;
-
         try {
+            // Проверяем, что reviewData является объектом
+            if (!reviewData || typeof reviewData !== 'object') {
+                throw new Error('Некорректные данные для обновления');
+            }
+
+            // Извлекаем только те поля, которые можно обновлять
+            const { rating, review_text } = reviewData;
+            
             // Проверяем валидность оценки
-            if (rating < 1 || rating > 10) {
+            if (rating !== undefined && (rating < 1 || rating > 10)) {
                 throw new Error('Оценка должна быть от 1 до 10');
             }
 
-            const [result] = await query(`
+            // Проверяем валидность текста рецензии
+            if (review_text !== undefined && review_text.trim().length < 10) {
+                throw new Error('Текст рецензии должен содержать минимум 10 символов');
+            }
+
+            // Строим динамический SQL запрос
+            const updateFields = [];
+            const params = [];
+
+            if (rating !== undefined && rating !== null) {
+                updateFields.push('rating = ?');
+                params.push(parseInt(rating));
+            }
+
+            if (review_text !== undefined && review_text !== null) {
+                updateFields.push('review_text = ?');
+                params.push(review_text.trim());
+            }
+
+            if (updateFields.length === 0) {
+                throw new Error('Нет данных для обновления');
+            }
+
+            updateFields.push('updated_at = CURRENT_TIMESTAMP');
+            params.push(id);
+
+            console.log('Review.update - SQL:', `UPDATE reviews SET ${updateFields.join(', ')} WHERE id = ?`);
+            console.log('Review.update - params:', params);
+
+            const result = await query(`
                 UPDATE reviews 
-                SET rating = ?, review_text = ?, updated_at = CURRENT_TIMESTAMP
+                SET ${updateFields.join(', ')}
                 WHERE id = ?
-            `, [rating, review_text, id]);
+            `, params);
 
             if (result.affectedRows === 0) {
                 throw new Error('Рецензия не найдена');
@@ -87,6 +120,7 @@ class Review {
 
             return true;
         } catch (error) {
+            console.error('Review.update - error:', error);
             throw new Error(`Ошибка обновления рецензии: ${error.message}`);
         }
     }
@@ -94,7 +128,7 @@ class Review {
     // Удалить рецензию
     static async delete(id) {
         try {
-            const [result] = await query('DELETE FROM reviews WHERE id = ?', [id]);
+            const result = await query('DELETE FROM reviews WHERE id = ?', [id]);
             
             if (result.affectedRows === 0) {
                 throw new Error('Рецензия не найдена');
@@ -128,7 +162,8 @@ class Review {
                 params.push(movieId);
             }
 
-            const [stats] = await query(sql, params);
+            const results = await query(sql, params);
+            const stats = results[0] || {};
             
             return {
                 ...stats,
@@ -162,11 +197,12 @@ class Review {
             `, [reviewerName, limit, offset]);
 
             // Получаем общее количество рецензий
-            const [{ total }] = await query(`
+            const results = await query(`
                 SELECT COUNT(*) as total
                 FROM reviews 
                 WHERE reviewer_name = ?
             `, [reviewerName]);
+            const { total } = results[0] || { total: 0 };
 
             return {
                 reviews,
@@ -274,7 +310,8 @@ class Review {
                 }).join(' AND ');
             }
 
-            const [{ total }] = await query(countSql, countParams);
+            const results = await query(countSql, countParams);
+            const { total } = results[0] || { total: 0 };
 
             return {
                 reviews,

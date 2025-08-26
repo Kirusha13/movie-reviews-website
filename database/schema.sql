@@ -46,7 +46,7 @@ CREATE TABLE movies (
 CREATE TABLE reviews (
     id INT PRIMARY KEY AUTO_INCREMENT,
     movie_id INT NOT NULL,
-    reviewer_name VARCHAR(100) NOT NULL, -- 'user' или 'friend'
+    reviewer_name VARCHAR(100) NOT NULL, -- 'Цеха' или 'Паша'
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 10),
     review_text TEXT,
     review_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

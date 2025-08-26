@@ -54,11 +54,23 @@ const createReview = async (req, res) => {
         const { movieId } = req.params;
         const { reviewer_name, rating, review_text } = req.body;
 
+        // Отладочная информация
+        console.log('Получены данные рецензии:', {
+            movieId,
+            reviewer_name,
+            reviewer_name_type: typeof reviewer_name,
+            reviewer_name_length: reviewer_name ? reviewer_name.length : 'undefined',
+            reviewer_name_chars: reviewer_name ? Array.from(reviewer_name).map(c => c.charCodeAt(0)) : 'undefined',
+            rating,
+            review_text
+        });
+
         // Валидация
-        if (!reviewer_name || !['user', 'friend'].includes(reviewer_name)) {
+        if (!reviewer_name || !['Цеха', 'Паша'].includes(reviewer_name)) {
+            console.log('Валидация не прошла. reviewer_name:', `"${reviewer_name}"`);
             return res.status(400).json({
                 success: false,
-                message: 'Некорректное имя рецензента'
+                message: 'Некорректное имя рецензента. Допустимые значения: Цеха, Паша'
             });
         }
 
@@ -213,10 +225,10 @@ const getReviewsByReviewer = async (req, res) => {
         const { reviewerName } = req.params;
         const { page = 1, limit = 10, sortBy = 'review_date', sortOrder = 'DESC' } = req.query;
 
-        if (!['user', 'friend'].includes(reviewerName)) {
+        if (!['Цеха', 'Паша'].includes(reviewerName)) {
             return res.status(400).json({
                 success: false,
-                message: 'Некорректное имя рецензента'
+                message: 'Некорректное имя рецензента. Допустимые значения: Цеха, Паша'
             });
         }
 

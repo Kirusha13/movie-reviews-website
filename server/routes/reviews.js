@@ -5,6 +5,9 @@ const reviewController = require('../controllers/reviewController');
 // Получить все рецензии с пагинацией
 router.get('/', reviewController.getAllReviews);
 
+// Получить рецензии для конкретного фильма
+router.get('/movie/:movieId', reviewController.getReviewsByMovie);
+
 // Получить отфильтрованные рецензии
 router.get('/filtered', reviewController.getFilteredReviews);
 

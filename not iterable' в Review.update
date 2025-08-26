@@ -1,0 +1,13 @@
+warning: in the working copy of 'frontend/package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/App.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/pages/MovieList.js', LF will be replaced by CRLF the next time Git touches it
+database/schema.sql
+frontend/package-lock.json
+frontend/package.json
+frontend/src/App.js
+frontend/src/pages/MovieList.js
+frontend/src/services/movieService.js
+server/controllers/reviewController.js
+server/models/Review.js
+server/routes/reviews.js

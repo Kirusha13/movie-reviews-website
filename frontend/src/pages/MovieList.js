@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import MovieCard from '../components/MovieCard';
 import MovieFilters from '../components/MovieFilters';
 import { movieService } from '../services/movieService';
 
 const MovieList = ({ onEditMovie }) => {
+    const navigate = useNavigate();
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -140,8 +142,8 @@ const MovieList = ({ onEditMovie }) => {
     };
 
     const handleMovieClick = (movie) => {
-        // Здесь можно добавить навигацию к детальной странице фильма
-        console.log('Клик по фильму:', movie);
+        // Переходим к детальной странице фильма
+        navigate(`/movie/${movie.id}`);
     };
 
     const handleAddToWatchlist = async (movieId) => {
