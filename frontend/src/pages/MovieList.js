@@ -529,7 +529,7 @@ const FiltersToggleButton = styled.button`
     top: 100px;
     right: 20px;
     z-index: 1000;
-    background: #667eea;
+    background: #2c3e50;
     color: white;
     border: none;
     border-radius: 50px;
@@ -537,7 +537,7 @@ const FiltersToggleButton = styled.button`
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 20px rgba(44, 62, 80, 0.3);
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
@@ -546,9 +546,9 @@ const FiltersToggleButton = styled.button`
     justify-content: center;
 
     &:hover {
-        background: #5a6fd8;
+        background: #34495e;
         transform: translateY(-2px);
-        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 6px 25px rgba(44, 62, 80, 0.4);
     }
 
     &:active {

@@ -22,9 +22,7 @@ const ReviewList = ({
         return reviewerName === 'Цеха' ? '#667eea' : reviewerName === 'Паша' ? '#ff6b6b' : '#999';
     };
 
-    // Проверяем, есть ли уже рецензия от текущего пользователя
-    const hasUserReview = reviews.some(review => review.reviewer_name === 'Цеха');
-    const buttonText = hasUserReview ? '✏️ Редактировать мою рецензию' : '✍️ Добавить рецензию';
+
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -55,13 +53,10 @@ const ReviewList = ({
             <Header>
                 <Title>Рецензии ({reviews.length})</Title>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                    <AddReviewButton onClick={onAddReview}>
-                        {buttonText}
-                    </AddReviewButton>
                     {!reviews.some(review => review.reviewer_name === 'Паша') && (
                         <AddReviewButton 
                             onClick={() => onAddReview('Паша')}
-                            style={{ background: 'rgba(255, 107, 107, 0.2)', borderColor: 'rgba(255, 107, 107, 0.3)' }}
+                            style={{ background: '#ff6b6b', borderColor: '#ff6b6b' }}
                         >
                             ✍️ Добавить рецензию от Паши
                         </AddReviewButton>
@@ -157,8 +152,9 @@ const Header = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: #f8f9fa;
+    color: #333;
+    border-bottom: 2px solid #e9ecef;
 `;
 
 const Title = styled.h3`
@@ -168,9 +164,9 @@ const Title = styled.h3`
 `;
 
 const AddReviewButton = styled.button`
-    background: rgba(255, 255, 255, 0.2);
+    background: #667eea;
     color: white;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid #667eea;
     border-radius: 8px;
     padding: 10px 20px;
     font-size: 14px;
@@ -179,8 +175,8 @@ const AddReviewButton = styled.button`
     transition: all 0.2s ease;
 
     &:hover {
-        background: rgba(255, 255, 255, 0.3);
-        border-color: rgba(255, 255, 255, 0.5);
+        background: #5a6fd8;
+        border-color: #5a6fd8;
         transform: translateY(-1px);
     }
 `;
@@ -350,6 +346,10 @@ const EmptyState = styled.div`
     text-align: center;
     padding: 60px 20px;
     color: #666;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
 `;
 
 const EmptyIcon = styled.div`

@@ -152,7 +152,7 @@ const WatchlistPage = React.memo(() => {
     const pageTitle = useMemo(() => '📋 Список желаемых фильмов', []);
     const pageSubtitle = useMemo(() => {
         if (movies.length > 0) {
-            return `У вас ${movies.length} фильм${movies.length === 1 ? '' : movies.length < 5 ? 'а' : 'ов'} в списке желаемых`;
+            return 'Ваши фильмы для будущего просмотра';
         }
         return 'Ваш список желаемых пуст';
     }, [movies.length]);
@@ -275,6 +275,10 @@ const PageContainer = styled.div`
 const PageHeader = styled.div`
     text-align: center;
     margin-bottom: 30px;
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 `;
 
 const PageTitle = styled.h1`
@@ -294,7 +298,7 @@ const FiltersToggleButton = styled.button`
     position: fixed;
     top: 100px;
     right: 20px;
-    background: #3498db;
+    background: #2c3e50;
     color: white;
     border: none;
     padding: 12px 20px;
@@ -302,7 +306,7 @@ const FiltersToggleButton = styled.button`
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(52, 152, 219, 0.3);
+    box-shadow: 0 4px 20px rgba(44, 62, 80, 0.3);
     transition: all 0.3s ease;
     z-index: 1000;
     display: flex;
@@ -310,9 +314,9 @@ const FiltersToggleButton = styled.button`
     gap: 8px;
 
     &:hover {
-        background: #2980b9;
+        background: #34495e;
         transform: translateY(-2px);
-        box-shadow: 0 6px 25px rgba(52, 152, 219, 0.4);
+        box-shadow: 0 6px 25px rgba(44, 62, 80, 0.4);
     }
 
     @media (max-width: 768px) {
@@ -409,10 +413,11 @@ const FiltersSection = styled.div`
 `;
 
 const MoviesGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 24px;
-    margin-bottom: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 32px;
 `;
 
 const PaginationContainer = styled.div`

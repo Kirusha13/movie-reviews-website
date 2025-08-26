@@ -94,9 +94,7 @@ const MovieCard = React.memo(({ movie, onMovieClick, onAddToWatchlist, onRemoveF
                 <RatingBadge rating={Number(movie.rating) || 0}>
                     {movieRating}
                 </RatingBadge>
-                {movie.status === 'watchlist' && (
-                    <WatchlistBadge>В списке</WatchlistBadge>
-                )}
+
             </PosterContainer>
 
             <CardContent>
@@ -125,7 +123,7 @@ const MovieCard = React.memo(({ movie, onMovieClick, onAddToWatchlist, onRemoveF
                     <HoverContent>
                         <HoverTitle>{movieTitle}</HoverTitle>
                         
-                        {hasReviews ? (
+                        {hasReviews && (
                             <ReviewsContainer>
                                 {movie.reviews.map((review, index) => (
                                     <ReviewItem key={index}>
@@ -146,39 +144,37 @@ const MovieCard = React.memo(({ movie, onMovieClick, onAddToWatchlist, onRemoveF
                                     </ReviewItem>
                                 ))}
                             </ReviewsContainer>
-                        ) : (
-                            <NoReviews>Нет рецензий</NoReviews>
                         )}
 
                         <ActionButtons>
                             <EditButton onClick={(e) => {
                                 e.stopPropagation();
                                 if (onEditMovie) onEditMovie(movie);
-                            }}>
-                                ✏️ Редактировать
+                            }} title="Редактировать">
+                                ✏️
                             </EditButton>
                             
                             {movie.status === 'watchlist' ? (
-                                <RemoveButton onClick={(e) => {
+                                <WatchedButton onClick={(e) => {
                                     e.stopPropagation();
                                     if (movie.id) onRemoveFromWatchlist(movie.id);
-                                }}>
-                                    Убрать из списка
-                                </RemoveButton>
+                                }} title="Отметить как просмотренное">
+                                    👁️
+                                </WatchedButton>
                             ) : (
                                 <AddButton onClick={(e) => {
                                     e.stopPropagation();
                                     if (movie.id) onAddToWatchlist(movie.id);
-                                }}>
-                                    В список желаемых
+                                }} title="В список желаемых">
+                                    📋
                                 </AddButton>
                             )}
                             
                             <DeleteButton onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteClick(e);
-                            }}>
-                                🗑️ Удалить
+                            }} title="Удалить">
+                                🗑️
                             </DeleteButton>
                         </ActionButtons>
                     </HoverContent>
@@ -358,28 +354,10 @@ const HoverContent = styled.div`
     color: white;
     text-align: center;
     width: 100%;
-    max-height: 100%;
-    overflow-y: auto;
-    padding-right: 5px;
-    
-    /* Стили для скроллбара */
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
-    
-    &::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 3px;
-    }
-    
-    &::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.5);
-    }
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 `;
 
 const HoverTitle = styled.h3`
@@ -416,7 +394,7 @@ const ReviewItem = styled.div`
 const ReviewerName = styled.div`
     font-size: 14px;
     font-weight: 600;
-    color: #4CAF50;
+    color: #666;
     margin-bottom: 8px;
 `;
 
@@ -442,32 +420,34 @@ const ReviewText = styled.div`
     text-overflow: ellipsis;
 `;
 
-const NoReviews = styled.div`
-    font-size: 16px;
-    color: #ccc;
-    margin-bottom: 20px;
-`;
+
 
 const ActionButtons = styled.div`
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
     align-items: center;
+    justify-content: center;
 `;
 
 const AddButton = styled.button`
     background: #4CAF50;
     color: white;
     border: none;
-    padding: 10px 16px;
+    padding: 8px;
     border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
         background: #45a049;
+        transform: scale(1.1);
     }
 `;
 
@@ -475,31 +455,62 @@ const EditButton = styled.button`
     background: #2196F3;
     color: white;
     border: none;
-    padding: 10px 16px;
+    padding: 8px;
     border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
         background: #1976D2;
+        transform: scale(1.1);
     }
 `;
 
-const RemoveButton = styled.button`
+const WatchedButton = styled.button`
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        background: #45a049;
+        transform: scale(1.1);
+    }
+`;
+
+ const RemoveButton = styled.button`
     background: #f44336;
     color: white;
     border: none;
-    padding: 10px 16px;
+    padding: 8px;
     border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
         background: #da190b;
+        transform: scale(1.1);
     }
 `;
 
@@ -507,15 +518,20 @@ const DeleteButton = styled.button`
     background: #dc3545;
     color: white;
     border: none;
-    padding: 10px 16px;
+    padding: 8px;
     border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
         background: #c82333;
+        transform: scale(1.1);
     }
 `;
 

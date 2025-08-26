@@ -251,9 +251,12 @@ const MovieDetail = () => {
 
     return (
         <PageContainer>
-            <BackButton onClick={() => navigate('/')}>
-                ← Вернуться к списку
-            </BackButton>
+            <BackButtonContainer>
+                <BackButton onClick={() => navigate('/')}>
+                    <BackIcon>←</BackIcon>
+                    <BackText>К списку</BackText>
+                </BackButton>
+            </BackButtonContainer>
 
             {showReviewForm ? (
                 <ReviewForm
@@ -269,7 +272,25 @@ const MovieDetail = () => {
                     <MovieHeader>
                         <MoviePoster src={movie.poster_url && movie.poster_url.trim() ? movie.poster_url : '/placeholder-poster.jpg'} alt={movie.title || 'Фильм'} />
                         <MovieInfo>
-                            <MovieTitle>{movie.title || 'Без названия'}</MovieTitle>
+                            <TitleRow>
+                                <MovieTitle>{movie.title || 'Без названия'}</MovieTitle>
+                                <TitleActions>
+                                    {movie.status === 'watched' && (
+                                        <ActionButton onClick={handleAddReview} title="Добавить рецензию">
+                                            ✍️
+                                        </ActionButton>
+                                    )}
+                                    {movie.status === 'watchlist' ? (
+                                        <ActionButton onClick={handleRemoveFromWatchlist} title="Убрать из списка желаемых">
+                                            ❌
+                                        </ActionButton>
+                                    ) : (
+                                        <ActionButton onClick={handleAddToWatchlist} title="Добавить в список желаемых">
+                                            📋
+                                        </ActionButton>
+                                    )}
+                                </TitleActions>
+                            </TitleRow>
                             {movie.original_title && movie.original_title.trim() && movie.original_title !== movie.title && (
                                 <MovieOriginalTitle>{movie.original_title}</MovieOriginalTitle>
                             )}
@@ -326,26 +347,22 @@ const MovieDetail = () => {
                                 </DescriptionSection>
                             )}
 
-                            {/* Кнопка Watchlist */}
-                            <WatchlistSection>
-                                {movie.status === 'watchlist' ? (
-                                    <WatchlistButton 
-                                        onClick={handleRemoveFromWatchlist}
-                                        type="remove"
-                                    >
-                                        ❌ Убрать из списка желаемых
-                                    </WatchlistButton>
-                                ) : (
-                                    <WatchlistButton 
-                                        onClick={handleAddToWatchlist}
-                                        type="add"
-                                    >
-                                        📋 Добавить в список желаемых
-                                    </WatchlistButton>
-                                )}
-                            </WatchlistSection>
+
                         </MovieInfo>
                     </MovieHeader>
+
+                    {/* Рецензии (показываем только если они есть) */}
+                    {reviews && reviews.length > 0 && (
+                        <ReviewsSection>
+                            <ReviewList
+                                reviews={reviews}
+                                movie={movie}
+                                onAddReview={handleAddReview}
+                                onEditReview={handleEditReview}
+                                onDeleteReview={handleDeleteReview}
+                            />
+                        </ReviewsSection>
+                    )}
 
                     {movie.genres && Array.isArray(movie.genres) && movie.genres.length > 0 && movie.genres.some(genre => genre && (typeof genre === 'string' ? genre.trim() : genre.name)) && (
                         <GenresSection>
@@ -368,14 +385,6 @@ const MovieDetail = () => {
                             </ActorsList>
                         </ActorsSection>
                     )}
-
-                    <ReviewList
-                        reviews={reviews}
-                        movie={movie}
-                        onAddReview={handleAddReview}
-                        onEditReview={handleEditReview}
-                        onDeleteReview={handleDeleteReview}
-                    />
                 </>
             )}
 
@@ -419,23 +428,62 @@ const PageContainer = styled.div`
     padding: 24px;
 `;
 
+const BackButtonContainer = styled.div`
+    position: relative;
+    margin-bottom: 24px;
+`;
+
 const BackButton = styled.button`
-    background: #f8f9fa;
-    color: #666;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 12px 20px;
+    background: transparent;
+    color: #667eea;
+    border: none;
+    padding: 8px 16px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: 24px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+    }
 
     &:hover {
-        background: #e9ecef;
-        border-color: #dee2e6;
-        transform: translateY(-1px);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+        &::before {
+            opacity: 1;
+        }
     }
+
+    &:active {
+        transform: translateY(0);
+    }
+`;
+
+const BackIcon = styled.span`
+    font-size: 18px;
+    font-weight: bold;
+`;
+
+const BackText = styled.span`
+    font-weight: 500;
 `;
 
 const MovieHeader = styled.div`
@@ -475,11 +523,52 @@ const MovieInfo = styled.div`
     gap: 20px;
 `;
 
+const TitleRow = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    
+    @media (max-width: 768px) {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+`;
+
+const TitleActions = styled.div`
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+`;
+
+const ActionButton = styled.button`
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        background: #5a6fd8;
+        transform: scale(1.1);
+    }
+`;
+
 const MovieTitle = styled.h1`
     margin: 0;
     font-size: 2.5rem;
     font-weight: 700;
     color: #333;
+    flex: 1;
     
     @media (max-width: 768px) {
         font-size: 2rem;
@@ -602,6 +691,10 @@ const SectionTitle = styled.h3`
     color: #333;
 `;
 
+const ReviewsSection = styled.div`
+    margin-bottom: 24px;
+`;
+
 const GenresSection = styled.div`
     margin-bottom: 24px;
     background: white;
@@ -617,12 +710,19 @@ const GenresList = styled.div`
 `;
 
 const GenreTag = styled.span`
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: #f8f9fa;
+    color: #333;
     padding: 8px 16px;
     border-radius: 20px;
     font-size: 14px;
-    font-weight: 500;
+    border: 2px solid #e9ecef;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: #667eea;
+        background: #667eea;
+        color: white;
+    }
 `;
 
 const ActorsSection = styled.div`

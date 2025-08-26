@@ -5,7 +5,7 @@ import MovieList from './pages/MovieList';
 import MovieForm from './components/MovieForm';
 import MovieDetail from './pages/MovieDetail';
 import WatchlistPage from './pages/WatchlistPage';
-import PerformanceMonitor from './components/PerformanceMonitor';
+
 import ToastContainer from './components/ToastContainer';
 import useToast from './hooks/useToast';
 
@@ -200,9 +200,6 @@ const AppContent = () => {
       
       {/* Toast уведомления */}
       <ToastContainer toasts={toasts} onHideToast={hideToast} />
-      
-      {/* Монитор производительности */}
-      <PerformanceMonitor />
     </AppContainer>
   );
 };
@@ -218,7 +215,7 @@ const App = () => {
 // Styled Components
 const AppContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
 `;
 
 const Header = styled.header`
