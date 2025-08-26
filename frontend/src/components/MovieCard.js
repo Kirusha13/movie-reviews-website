@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -12,54 +12,87 @@ const getRatingColor = (rating) => {
     return '#F44336'; // Красный для очень низких
 };
 
-const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlist, onEditMovie, onDeleteMovie }) => {
+const MovieCard = React.memo(({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlist, onEditMovie, onDeleteMovie }) => {
+
     const [isHovered, setIsHovered] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    const handleMouseEnter = () => setIsHovered(true);
-    const handleMouseLeave = () => setIsHovered(false);
+    // Мемоизируем функции с useCallback
+    const handleMouseEnter = useCallback(() => setIsHovered(true), []);
+    const handleMouseLeave = useCallback(() => setIsHovered(false), []);
     
-    const handleDeleteClick = (e) => {
+    const handleDeleteClick = useCallback((e) => {
         e.stopPropagation();
         setShowDeleteConfirm(true);
-    };
+    }, []);
     
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = useCallback(() => {
         if (onDeleteMovie && movie.id) {
             onDeleteMovie(movie.id);
         }
         setShowDeleteConfirm(false);
-    };
+    }, [onDeleteMovie, movie.id]);
 
-    const formatDuration = (minutes) => {
-        const numMinutes = Number(minutes) || 0;
+    const handleMovieClick = useCallback(() => {
+        if (!showDeleteConfirm && onMovieClick) {
+            onMovieClick(movie);
+        }
+    }, [showDeleteConfirm, onMovieClick, movie]);
+
+    // Мемоизируем вычисляемые значения
+    const formattedDuration = useMemo(() => {
+        const numMinutes = Number(movie.duration) || 0;
         if (!numMinutes) return '';
         const hours = Math.floor(numMinutes / 60);
         const mins = numMinutes % 60;
         return hours > 0 ? `${hours}ч ${mins}м` : `${mins}м`;
-    };
+    }, [movie.duration]);
+
+    const movieRating = useMemo(() => {
+        const rating = Number(movie.rating) || 0;
+        return rating && !isNaN(rating) ? rating.toFixed(1) : 'N/A';
+    }, [movie.rating]);
+
+    const movieTitle = useMemo(() => movie.title || 'Без названия', [movie.title]);
+    const movieYear = useMemo(() => movie.release_year || 'Год не указан', [movie.release_year]);
+    const hasOriginalTitle = useMemo(() => 
+        movie.original_title && 
+        movie.original_title !== movie.title && 
+        movie.original_title.trim() !== '', 
+        [movie.original_title, movie.title]
+    );
+
+    const displayGenres = useMemo(() => {
+        if (!Array.isArray(movie.genres) || movie.genres.length === 0) return null;
+        
+        const visibleGenres = movie.genres.slice(0, 3);
+        const hasMore = movie.genres.length > 3;
+        
+        return { visibleGenres, hasMore, total: movie.genres.length };
+    }, [movie.genres]);
+
+    const hasReviews = useMemo(() => 
+        Array.isArray(movie.reviews) && movie.reviews.length > 0, 
+        [movie.reviews]
+    );
 
     return (
         <CardContainer
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            onClick={() => {
-                // Не переходим на детальную страницу, если открыт диалог подтверждения
-                if (!showDeleteConfirm && onMovieClick) {
-                    onMovieClick(movie);
-                }
-            }}
+            onClick={handleMovieClick}
         >
             <PosterContainer>
                 <Poster 
-                    src={movie.poster_url || '/default-poster.jpg'} 
-                    alt={movie.title || 'Постер фильма'}
+                    src={movie.poster_url || '/logo192.png'} 
+                    alt={movieTitle}
+                    loading="lazy"
                     onError={(e) => {
-                        e.target.src = '/default-poster.jpg';
+                        e.target.src = '/logo192.png';
                     }}
                 />
                 <RatingBadge rating={Number(movie.rating) || 0}>
-                    {movie.rating && !isNaN(Number(movie.rating)) ? Number(movie.rating).toFixed(1) : 'N/A'}
+                    {movieRating}
                 </RatingBadge>
                 {movie.status === 'watchlist' && (
                     <WatchlistBadge>В списке</WatchlistBadge>
@@ -67,20 +100,20 @@ const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlis
             </PosterContainer>
 
             <CardContent>
-                <Title>{movie.title || 'Без названия'}</Title>
-                {movie.original_title && movie.original_title !== movie.title && movie.original_title.trim() !== '' && (
+                <Title>{movieTitle}</Title>
+                {hasOriginalTitle && (
                     <OriginalTitle>{movie.original_title}</OriginalTitle>
                 )}
-                <Year>{movie.release_year || 'Год не указан'}</Year>
-                {movie.duration && <Duration>{formatDuration(movie.duration)}</Duration>}
+                <Year>{movieYear}</Year>
+                {movie.duration && <Duration>{formattedDuration}</Duration>}
                 
-                {Array.isArray(movie.genres) && movie.genres.length > 0 && (
+                {displayGenres && (
                     <GenresContainer>
-                        {movie.genres.slice(0, 3).map((genre, index) => (
+                        {displayGenres.visibleGenres.map((genre, index) => (
                             <GenreTag key={index}>{genre}</GenreTag>
                         ))}
-                        {movie.genres.length > 3 && (
-                            <GenreTag>+{movie.genres.length - 3}</GenreTag>
+                        {displayGenres.hasMore && (
+                            <GenreTag>+{displayGenres.total - 3}</GenreTag>
                         )}
                     </GenresContainer>
                 )}
@@ -90,9 +123,9 @@ const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlis
             {isHovered && (
                 <HoverOverlay>
                     <HoverContent>
-                        <HoverTitle>{movie.title}</HoverTitle>
+                        <HoverTitle>{movieTitle}</HoverTitle>
                         
-                        {Array.isArray(movie.reviews) && movie.reviews.length > 0 ? (
+                        {hasReviews ? (
                             <ReviewsContainer>
                                 {movie.reviews.map((review, index) => (
                                     <ReviewItem key={index}>
@@ -167,7 +200,7 @@ const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlis
             )}
         </CardContainer>
     );
-};
+});
 
 // Styled Components
 const CardContainer = styled.div`

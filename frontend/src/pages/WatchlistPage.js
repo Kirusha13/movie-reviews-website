@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { movieService } from '../services/movieService';
 import WatchlistMovieCard from '../components/WatchlistMovieCard';
 import MovieFilters from '../components/MovieFilters';
 import Pagination from '../components/Pagination';
 
-const WatchlistPage = () => {
+const WatchlistPage = React.memo(() => {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -25,23 +25,17 @@ const WatchlistPage = () => {
     const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useState(false);
 
     // Загружаем список желаемых фильмов
-    const fetchWatchlist = async (page = 1, newFilters = filters) => {
-        console.log('📋 WatchlistPage: fetchWatchlist вызван с параметрами:', { page, newFilters });
+    const fetchWatchlist = useCallback(async (page = 1, newFilters = filters) => {
         try {
             setLoading(true);
-            console.log('📋 WatchlistPage: Вызываем movieService.getWatchlist...');
             
             const response = await movieService.getWatchlist({
                 page,
                 limit: pagination.limit,
                 ...newFilters
             });
-            
-            console.log('📋 WatchlistPage: Ответ от getWatchlist:', response);
 
             if (response.success) {
-                console.log('📋 WatchlistPage: Успешно! Данные:', response.data);
-                // API возвращает массив фильмов напрямую в data
                 setMovies(response.data || []);
                 setPagination({
                     page,
@@ -53,34 +47,34 @@ const WatchlistPage = () => {
                 throw new Error(response.message || 'Ошибка загрузки списка желаемых');
             }
         } catch (error) {
-            console.error('📋 WatchlistPage: Ошибка загрузки списка желаемых:', error);
+            console.error('Ошибка загрузки списка желаемых:', error);
             setError(error.message);
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, pagination.limit]);
 
     // Обработчик изменения фильтров
-    const handleFiltersChange = (newFilters) => {
+    const handleFiltersChange = useCallback((newFilters) => {
         setFilters(newFilters);
         setPagination(prev => ({ ...prev, page: 1 }));
         fetchWatchlist(1, newFilters);
-    };
+    }, [fetchWatchlist]);
 
-    const toggleFiltersPanel = () => {
+    const toggleFiltersPanel = useCallback(() => {
         setIsFiltersPanelOpen(!isFiltersPanelOpen);
-    };
+    }, [isFiltersPanelOpen]);
 
-    const hasActiveFilters = () => {
+    const hasActiveFilters = useCallback(() => {
         return filters.genre || 
                filters.minRating > 0 || 
                filters.maxRating < 10 || 
                filters.sortBy !== 'created_at' ||
                filters.sortOrder !== 'DESC';
-    };
+    }, [filters]);
 
     // Обработчик поиска
-    const handleSearch = async (searchQuery) => {
+    const handleSearch = useCallback(async (searchQuery) => {
         try {
             setLoading(true);
             setError(null);
@@ -108,16 +102,16 @@ const WatchlistPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [pagination.limit]);
 
     // Обработчик изменения страницы
-    const handlePageChange = (newPage) => {
+    const handlePageChange = useCallback((newPage) => {
         setPagination(prev => ({ ...prev, page: newPage }));
         fetchWatchlist(newPage, filters);
-    };
+    }, [fetchWatchlist, filters]);
 
     // Обработчик удаления фильма из списка желаемых
-    const handleRemoveFromWatchlist = async (movieId) => {
+    const handleRemoveFromWatchlist = useCallback(async (movieId) => {
         try {
             const response = await movieService.removeFromWatchlist(movieId);
             if (response.success) {
@@ -130,12 +124,12 @@ const WatchlistPage = () => {
             console.error('Ошибка удаления из списка желаемых:', error);
             setError(error.message);
         }
-    };
+    }, [fetchWatchlist, pagination.page, filters]);
 
     // Загружаем данные при монтировании компонента
     useEffect(() => {
         fetchWatchlist();
-    }, []);
+    }, [fetchWatchlist]);
 
     // Обработка нажатия Escape для закрытия панели
     useEffect(() => {
@@ -154,11 +148,24 @@ const WatchlistPage = () => {
         };
     }, [isFiltersPanelOpen]);
 
+    // Мемоизируем вычисляемые значения
+    const pageTitle = useMemo(() => '📋 Список желаемых фильмов', []);
+    const pageSubtitle = useMemo(() => {
+        if (movies.length > 0) {
+            return `У вас ${movies.length} фильм${movies.length === 1 ? '' : movies.length < 5 ? 'а' : 'ов'} в списке желаемых`;
+        }
+        return 'Ваш список желаемых пуст';
+    }, [movies.length]);
+
+    const showFilters = useMemo(() => movies.length > 0, [movies.length]);
+    const showPagination = useMemo(() => pagination.totalPages > 1, [pagination.totalPages]);
+    const isEmpty = useMemo(() => movies.length === 0, [movies.length]);
+
     if (loading && movies.length === 0) {
         return (
             <PageContainer>
                 <PageHeader>
-                    <PageTitle>📋 Список желаемых фильмов</PageTitle>
+                    <PageTitle>{pageTitle}</PageTitle>
                 </PageHeader>
                 <LoadingContainer>
                     <LoadingSpinner />
@@ -172,7 +179,7 @@ const WatchlistPage = () => {
         return (
             <PageContainer>
                 <PageHeader>
-                    <PageTitle>📋 Список желаемых фильмов</PageTitle>
+                    <PageTitle>{pageTitle}</PageTitle>
                 </PageHeader>
                 <ErrorContainer>
                     <ErrorMessage>Ошибка: {error}</ErrorMessage>
@@ -215,16 +222,11 @@ const WatchlistPage = () => {
             {isFiltersPanelOpen && <Overlay onClick={toggleFiltersPanel} />}
 
             <PageHeader>
-                <PageTitle>📋 Список желаемых фильмов</PageTitle>
-                <PageSubtitle>
-                    {movies.length > 0 
-                        ? `У вас ${movies.length} фильм${movies.length === 1 ? '' : movies.length < 5 ? 'а' : 'ов'} в списке желаемых`
-                        : 'Ваш список желаемых пуст'
-                    }
-                </PageSubtitle>
+                <PageTitle>{pageTitle}</PageTitle>
+                <PageSubtitle>{pageSubtitle}</PageSubtitle>
             </PageHeader>
 
-            {movies.length === 0 ? (
+            {isEmpty ? (
                 <EmptyState>
                     <EmptyIcon>🎬</EmptyIcon>
                     <EmptyTitle>Список желаемых пуст</EmptyTitle>
@@ -247,7 +249,7 @@ const WatchlistPage = () => {
                         ))}
                     </MoviesGrid>
 
-                    {pagination.totalPages > 1 && (
+                    {showPagination && (
                         <PaginationContainer>
                             <Pagination
                                 currentPage={pagination.page}
@@ -260,7 +262,7 @@ const WatchlistPage = () => {
             )}
         </PageContainer>
     );
-};
+});
 
 // Styled Components
 const PageContainer = styled.div`

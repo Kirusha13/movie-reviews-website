@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import MovieCard from '../components/MovieCard';
 import MovieFilters from '../components/MovieFilters';
 import { movieService } from '../services/movieService';
 
-const MovieList = ({ onEditMovie }) => {
+const MovieList = React.memo(({ onEditMovie }) => {
     const navigate = useNavigate();
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,6 +25,22 @@ const MovieList = ({ onEditMovie }) => {
         totalPages: 0
     });
     const [genres, setGenres] = useState([]);
+
+    // Мемоизируем статические жанры
+    const staticGenres = useMemo(() => [
+        { id: 1, name: 'Боевик' },
+        { id: 2, name: 'Комедия' },
+        { id: 3, name: 'Драма' },
+        { id: 4, name: 'Ужасы' },
+        { id: 5, name: 'Фантастика' },
+        { id: 6, name: 'Триллер' },
+        { id: 7, name: 'Романтика' },
+        { id: 8, name: 'Документальный' },
+        { id: 9, name: 'Анимация' },
+        { id: 10, name: 'Криминал' },
+        { id: 11, name: 'Приключения' },
+        { id: 12, name: 'Семейный' }
+    ], []);
 
     useEffect(() => {
         fetchGenres();
@@ -48,31 +64,15 @@ const MovieList = ({ onEditMovie }) => {
         };
     }, [isFiltersPanelOpen]);
 
-    const fetchGenres = async () => {
+    const fetchGenres = useCallback(async () => {
         try {
-            // Здесь можно добавить API для получения жанров
-            // Пока используем статические данные
-            const staticGenres = [
-                { id: 1, name: 'Боевик' },
-                { id: 2, name: 'Комедия' },
-                { id: 3, name: 'Драма' },
-                { id: 4, name: 'Ужасы' },
-                { id: 5, name: 'Фантастика' },
-                { id: 6, name: 'Триллер' },
-                { id: 7, name: 'Романтика' },
-                { id: 8, name: 'Документальный' },
-                { id: 9, name: 'Анимация' },
-                { id: 10, name: 'Криминал' },
-                { id: 11, name: 'Приключения' },
-                { id: 12, name: 'Семейный' }
-            ];
             setGenres(staticGenres);
         } catch (error) {
             console.error('Ошибка получения жанров:', error);
         }
-    };
+    }, [staticGenres]);
 
-    const fetchMovies = async () => {
+    const fetchMovies = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -100,20 +100,20 @@ const MovieList = ({ onEditMovie }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, pagination.page, pagination.limit]);
 
-    const handleFiltersChange = (newFilters) => {
+    const handleFiltersChange = useCallback((newFilters) => {
         setFilters(newFilters);
         setPagination(prev => ({ ...prev, page: 1 }));
-    };
+    }, []);
 
-    const handleSearch = async (searchQuery) => {
+    const handleSearch = useCallback(async (searchQuery) => {
         try {
             setLoading(true);
             setError(null);
 
             const response = await movieService.searchMovies(searchQuery, {
-                status: 'watched', // Ищем только в просмотренных фильмах
+                status: 'watched', 
                 page: 1,
                 limit: pagination.limit
             });
@@ -135,44 +135,37 @@ const MovieList = ({ onEditMovie }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [pagination.limit]);
 
-    const handlePageChange = (newPage) => {
+    const handlePageChange = useCallback((newPage) => {
         setPagination(prev => ({ ...prev, page: newPage }));
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+    }, []);
 
-    const handleMovieClick = (movie) => {
-        // Переходим к детальной странице фильма
+    const handleMovieClick = useCallback((movie) => {
         navigate(`/movie/${movie.id}`);
-    };
+    }, [navigate]);
 
-    const handleAddToWatchlist = async (movieId) => {
-        console.log('🎯 MovieList: handleAddToWatchlist вызван с movieId:', movieId);
+    const handleAddToWatchlist = useCallback(async (movieId) => {
         try {
-            console.log('🎯 MovieList: Вызываем movieService.addToWatchlist...');
             const response = await movieService.addToWatchlist(movieId);
-            console.log('🎯 MovieList: Ответ от сервера:', response);
             
             if (response.success) {
-                console.log('🎯 MovieList: Успешно! Обновляем список фильмов...');
-                // Обновляем список фильмов, чтобы показать новый статус
                 await fetchMovies();
-                console.log('🎯 MovieList: Список фильмов обновлен');
             } else {
                 throw new Error(response.message || 'Ошибка добавления в список желаемых');
             }
         } catch (error) {
-            console.error('🎯 MovieList: Ошибка добавления в список желаемых:', error);
+            console.error('Ошибка добавления в список желаемых:', error);
             setError('Не удалось добавить фильм в список желаемых');
         }
-    };
+    }, [fetchMovies]);
 
-    const handleRemoveFromWatchlist = async (movieId) => {
+    const handleRemoveFromWatchlist = useCallback(async (movieId) => {
         try {
             const response = await movieService.removeFromWatchlist(movieId);
+            
             if (response.success) {
-                // Обновляем список фильмов, чтобы показать новый статус
                 await fetchMovies();
             } else {
                 throw new Error(response.message || 'Ошибка удаления из списка желаемых');
@@ -181,43 +174,52 @@ const MovieList = ({ onEditMovie }) => {
             console.error('Ошибка удаления из списка желаемых:', error);
             setError('Не удалось убрать фильм из списка желаемых');
         }
-    };
+    }, [fetchMovies]);
 
-    const handleEditMovie = (movie) => {
+    const handleEditMovie = useCallback((movieId) => {
         if (onEditMovie) {
-            onEditMovie(movie);
+            onEditMovie(movieId);
+        } else {
+            navigate(`/edit/${movieId}`);
         }
-    };
+    }, [onEditMovie, navigate]);
 
-    const handleDeleteMovie = async (movieId) => {
+    const handleDeleteMovie = useCallback(async (movieId) => {
         try {
             const response = await movieService.deleteMovie(movieId);
             if (response.success) {
-                // Обновляем список фильмов
-                fetchMovies();
+                await fetchMovies();
             } else {
-                setError(response.message || 'Ошибка удаления фильма');
+                throw new Error(response.message || 'Ошибка удаления фильма');
             }
         } catch (error) {
             console.error('Ошибка удаления фильма:', error);
             setError('Не удалось удалить фильм');
         }
-    };
+    }, [fetchMovies]);
 
-
-
-    const toggleFiltersPanel = () => {
+    const toggleFiltersPanel = useCallback(() => {
         setIsFiltersPanelOpen(!isFiltersPanelOpen);
-    };
+    }, [isFiltersPanelOpen]);
 
-    const hasActiveFilters = () => {
+    const hasActiveFilters = useCallback(() => {
         return filters.genre || 
                filters.minRating > 0 || 
                filters.maxRating < 10 || 
-               filters.status ||
                filters.sortBy !== 'created_at' ||
                filters.sortOrder !== 'DESC';
-    };
+    }, [filters]);
+
+    // Мемоизируем вычисляемые значения
+    const pageTitle = useMemo(() => '🎬 Мои фильмы', []);
+    const pageSubtitle = useMemo(() => {
+        if (loading) return 'Загружаем ваши фильмы...';
+        if (error) return 'Ошибка загрузки фильмов';
+        if (movies.length === 0) return 'У вас пока нет просмотренных фильмов';
+        return `У вас ${movies.length} просмотренн${movies.length === 1 ? 'ый' : movies.length < 5 ? 'ых' : 'ых'} фильм${movies.length === 1 ? '' : movies.length < 5 ? 'а' : 'ов'}`;
+    }, [loading, error, movies.length]);
+
+    const showPagination = useMemo(() => pagination.totalPages > 1, [pagination.totalPages]);
 
     if (loading && movies.length === 0) {
         return (
@@ -289,7 +291,7 @@ const MovieList = ({ onEditMovie }) => {
                         ))}
                     </MoviesGrid>
 
-                    {pagination.totalPages > 1 && (
+                    {showPagination && (
                         <Pagination>
                             <PaginationButton
                                 onClick={() => handlePageChange(pagination.page - 1)}
@@ -335,7 +337,7 @@ const MovieList = ({ onEditMovie }) => {
             )}
         </PageContainer>
     );
-};
+});
 
 // Styled Components
 const PageContainer = styled.div`

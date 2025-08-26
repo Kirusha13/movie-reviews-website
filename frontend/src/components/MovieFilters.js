@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
+import { useDebounce } from '../hooks/useDebounce';
 
-const MovieFilters = ({ 
+const MovieFilters = React.memo(({ 
     filters, 
     onFiltersChange, 
     genres = [], 
@@ -9,59 +10,69 @@ const MovieFilters = ({
 }) => {
     const [localFilters, setLocalFilters] = useState(filters);
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // Debounce поискового запроса
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     useEffect(() => {
         setLocalFilters(filters);
     }, [filters]);
 
-    const handleFilterChange = (key, value) => {
+    // Автоматический поиск при изменении debounced значения
+    useEffect(() => {
+        if (debouncedSearchQuery.trim() && onSearch) {
+            onSearch(debouncedSearchQuery.trim());
+        }
+    }, [debouncedSearchQuery, onSearch]);
+
+    const handleFilterChange = useCallback((key, value) => {
         const newFilters = { ...localFilters, [key]: value };
         setLocalFilters(newFilters);
         onFiltersChange(newFilters);
-    };
+    }, [localFilters, onFiltersChange]);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            onSearch(searchQuery.trim());
-        }
-    };
 
-    const clearFilters = () => {
+
+    const clearFilters = useCallback(() => {
         const clearedFilters = {
             genre: '',
             minRating: 0,
             maxRating: 10,
-            status: localFilters.status || '', // Сохраняем текущий статус
             sortBy: 'created_at',
             sortOrder: 'DESC'
         };
         setLocalFilters(clearedFilters);
         onFiltersChange(clearedFilters);
-    };
+    }, [onFiltersChange]);
 
-    const hasActiveFilters = () => {
+    const hasActiveFilters = useMemo(() => {
         return localFilters.genre || 
                localFilters.minRating > 0 || 
-               localFilters.maxRating < 10 || 
-               localFilters.status ||
+               localFilters.minRating < 10 || 
                localFilters.sortBy !== 'created_at' ||
                localFilters.sortOrder !== 'DESC';
-    };
+    }, [localFilters]);
+
+    // Мемоизируем опции сортировки
+    const sortOptions = useMemo(() => [
+        { value: 'created_at', label: 'По дате добавления' },
+        { value: 'title', label: 'По названию' },
+        { value: 'release_year', label: 'По году выпуска' },
+        { value: 'rating', label: 'По рейтингу' },
+        { value: 'duration', label: 'По длительности' }
+    ], []);
 
     return (
         <FiltersContainer>
             <SearchSection>
-                <SearchForm onSubmit={handleSearch}>
+                <SearchForm>
                     <SearchInput
                         type="text"
                         placeholder="Поиск по названию, актерам..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <SearchButton type="submit">
-                        🔍 Поиск
-                    </SearchButton>
+                    <SearchIcon>🔍</SearchIcon>
                 </SearchForm>
             </SearchSection>
 
@@ -106,8 +117,6 @@ const MovieFilters = ({
                     </RatingRange>
                 </FilterGroup>
 
-
-
                 <FilterGroup>
                     <FilterLabel>Сортировка:</FilterLabel>
                     <SortContainer>
@@ -115,11 +124,11 @@ const MovieFilters = ({
                             value={localFilters.sortBy || 'created_at'}
                             onChange={(e) => handleFilterChange('sortBy', e.target.value)}
                         >
-                            <option value="created_at">По дате добавления</option>
-                            <option value="title">По названию</option>
-                            <option value="release_year">По году выпуска</option>
-                            <option value="rating">По рейтингу</option>
-                            <option value="duration">По длительности</option>
+                            {sortOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
                         </FilterSelect>
                         <SortOrderButton
                             type="button"
@@ -134,7 +143,7 @@ const MovieFilters = ({
             </FiltersSection>
 
             <ActionsSection>
-                {hasActiveFilters() && (
+                {hasActiveFilters && (
                     <ClearButton onClick={clearFilters}>
                         🗑️ Очистить фильтры
                     </ClearButton>
@@ -142,7 +151,7 @@ const MovieFilters = ({
             </ActionsSection>
         </FiltersContainer>
     );
-};
+});
 
 // Styled Components
 const FiltersContainer = styled.div`
@@ -164,6 +173,7 @@ const SearchForm = styled.form`
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
+    position: relative;
 `;
 
 const SearchInput = styled.input`
@@ -184,25 +194,14 @@ const SearchInput = styled.input`
     }
 `;
 
-const SearchButton = styled.button`
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    white-space: nowrap;
-
-    &:hover {
-        background: #45a049;
-    }
-
-    &:active {
-        transform: translateY(1px);
-    }
+const SearchIcon = styled.div`
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: #999;
+    pointer-events: none;
 `;
 
 const FiltersSection = styled.div`
