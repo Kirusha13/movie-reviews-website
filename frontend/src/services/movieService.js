@@ -44,6 +44,20 @@ class MovieService {
         return this.request(endpoint);
     }
 
+    // Получить все фильмы с рецензиями для списка
+    async getMoviesWithReviews(filters = {}) {
+        const queryParams = new URLSearchParams();
+        
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                queryParams.append(key, value);
+            }
+        });
+
+        const endpoint = `/movies/with-reviews?${queryParams.toString()}`;
+        return this.request(endpoint);
+    }
+
     // Получить фильм по ID
     async getMovie(id) {
         return this.request(`/movies/${id}`);

@@ -35,7 +35,7 @@ CREATE TABLE movies (
     description TEXT,
     country VARCHAR(100),
     language VARCHAR(100),
-    rating DECIMAL(3,1) DEFAULT 0.0, -- средняя оценка
+    rating DECIMAL(3,1) DEFAULT 0.0, -- средняя оценка (может быть 0)
     total_reviews INT DEFAULT 0,
     status ENUM('watched', 'watchlist') DEFAULT 'watched',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -47,7 +47,7 @@ CREATE TABLE reviews (
     id INT PRIMARY KEY AUTO_INCREMENT,
     movie_id INT NOT NULL,
     reviewer_name VARCHAR(100) NOT NULL, -- 'Цеха' или 'Паша'
-    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 10),
+    rating DECIMAL(3,1) NOT NULL CHECK (rating >= 0 AND rating <= 10),
     review_text TEXT,
     review_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

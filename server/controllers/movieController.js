@@ -45,6 +45,50 @@ const getAllMovies = async (req, res) => {
     }
 };
 
+// Получить все фильмы с рецензиями для списка
+const getAllMoviesWithReviews = async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 12,
+            genre,
+            minRating = 0,
+            maxRating = 10,
+            search,
+            status,
+            sortBy = 'created_at',
+            sortOrder = 'DESC'
+        } = req.query;
+
+        const options = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            genre,
+            minRating: parseFloat(minRating),
+            maxRating: parseFloat(maxRating),
+            search,
+            status,
+            sortBy,
+            sortOrder: sortOrder.toUpperCase()
+        };
+
+        const result = await Movie.getAllWithReviews(options);
+
+        res.json({
+            success: true,
+            data: result.movies,
+            pagination: result.pagination
+        });
+    } catch (error) {
+        console.error('Ошибка получения фильмов с рецензиями:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Ошибка получения фильмов с рецензиями',
+            error: error.message
+        });
+    }
+};
+
 // Получить фильм по ID
 const getMovieById = async (req, res) => {
     try {
@@ -326,6 +370,7 @@ const searchMovies = async (req, res) => {
 
 module.exports = {
     getAllMovies,
+    getAllMoviesWithReviews,
     getMovieById,
     createMovie,
     updateMovie,

@@ -5,6 +5,7 @@ import ConfirmDialog from './ConfirmDialog';
 // Функция для определения цвета оценки
 const getRatingColor = (rating) => {
     const numRating = Number(rating) || 0;
+    if (numRating === 0) return '#9E9E9E'; // Серый для 0
     if (numRating >= 8) return '#4CAF50'; // Зеленый для высоких оценок
     if (numRating >= 6) return '#FF9800'; // Оранжевый для средних
     if (numRating >= 4) return '#FFC107'; // Желтый для низких
@@ -96,7 +97,7 @@ const MovieCard = ({ movie, onMovieClick, onAddToWatchlist, onRemoveFromWatchlis
                                 {movie.reviews.map((review, index) => (
                                     <ReviewItem key={index}>
                                         <ReviewerName>
-                                            {review.reviewer_name === 'user' ? 'Вы' : 'Друг'}
+                                            {review.reviewer_name === 'Цеха' ? 'Цеха' : 'Паша'}
                                         </ReviewerName>
                                         <ReviewRating rating={Number(review.rating) || 0}>
                                             {review.rating && !isNaN(Number(review.rating)) ? Number(review.rating) : 0}/10
@@ -209,7 +210,14 @@ const RatingBadge = styled.div`
     position: absolute;
     top: 12px;
     right: 12px;
-    background: ${props => (props.rating && !isNaN(Number(props.rating))) ? 'rgba(0, 0, 0, 0.8)' : 'rgba(128, 128, 128, 0.8)'};
+    background: ${props => {
+        const rating = Number(props.rating) || 0;
+        if (rating === 0) return 'rgba(128, 128, 128, 0.8)'; // Серый для 0
+        if (rating >= 8) return 'rgba(76, 175, 80, 0.9)'; // Зеленый для высоких
+        if (rating >= 6) return 'rgba(255, 152, 0, 0.9)'; // Оранжевый для средних
+        if (rating >= 4) return 'rgba(255, 193, 7, 0.9)'; // Желтый для низких
+        return 'rgba(244, 67, 54, 0.9)'; // Красный для очень низких
+    }};
     color: white;
     padding: 6px 10px;
     border-radius: 20px;
@@ -301,10 +309,11 @@ const HoverOverlay = styled.div`
     background: rgba(0, 0, 0, 0.9);
     backdrop-filter: blur(10px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 20px;
     animation: fadeIn 0.3s ease;
+    overflow-y: auto;
 
     @keyframes fadeIn {
         from { opacity: 0; }
@@ -316,13 +325,46 @@ const HoverContent = styled.div`
     color: white;
     text-align: center;
     width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    padding-right: 5px;
+    
+    /* Стили для скроллбара */
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
 `;
 
 const HoverTitle = styled.h3`
     margin: 0 0 20px 0;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    
+    /* Ограничиваем высоту для очень длинных названий */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const ReviewsContainer = styled.div`
@@ -330,11 +372,12 @@ const ReviewsContainer = styled.div`
 `;
 
 const ReviewItem = styled.div`
-    margin-bottom: 16px;
-    padding: 12px;
+    margin-bottom: 12px;
+    padding: 10px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     text-align: left;
+    max-width: 100%;
 `;
 
 const ReviewerName = styled.div`
@@ -355,6 +398,15 @@ const ReviewText = styled.div`
     font-size: 12px;
     color: #ccc;
     line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    
+    /* Ограничиваем высоту для длинных рецензий */
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const NoReviews = styled.div`

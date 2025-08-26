@@ -22,7 +22,7 @@ const ReviewForm = ({
         if (review) {
             setFormData({
                 reviewer_name: review.reviewer_name || defaultReviewer,
-                rating: review.rating || 5,
+                rating: review.rating || 0,
                 review_text: review.review_text || ''
             });
         } else {
@@ -36,6 +36,7 @@ const ReviewForm = ({
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -57,8 +58,8 @@ const ReviewForm = ({
             newErrors.reviewer_name = 'Выберите рецензента';
         }
 
-        if (!formData.rating || formData.rating < 1 || formData.rating > 10) {
-            newErrors.rating = 'Оценка должна быть от 1 до 10';
+        if (formData.rating === null || formData.rating === undefined || formData.rating < 0 || formData.rating > 10) {
+            newErrors.rating = 'Оценка должна быть от 0 до 10';
         }
 
         if (!formData.review_text.trim()) {
@@ -86,13 +87,13 @@ const ReviewForm = ({
             if (isEditing) {
                 // При редактировании отправляем только те поля, которые можно изменять
                 reviewData = {
-                    rating: parseInt(formData.rating) || 5,
+                    rating: parseFloat(formData.rating) || 0,
                     review_text: formData.review_text ? formData.review_text.trim() : ''
                 };
                 
                 // Проверяем, что данные корректны
-                if (!reviewData.rating || reviewData.rating < 1 || reviewData.rating > 10) {
-                    throw new Error('Некорректная оценка');
+                if (reviewData.rating === null || reviewData.rating === undefined || reviewData.rating < 0 || reviewData.rating > 10) {
+                    throw new Error('Некорректная оценка (должна быть от 0 до 10)');
                 }
                 if (!reviewData.review_text || reviewData.review_text.length < 10) {
                     throw new Error('Текст рецензии должен содержать минимум 10 символов');
@@ -102,16 +103,12 @@ const ReviewForm = ({
                 reviewData = {
                     ...formData,
                     reviewer_name: formData.reviewer_name ? formData.reviewer_name.trim() : 'Цеха',
-                    rating: parseInt(formData.rating) || 5,
+                    rating: parseFloat(formData.rating) || 0,
                     review_text: formData.review_text ? formData.review_text.trim() : ''
                 };
             }
 
-            // Отладочная информация
-            console.log('Отправляем данные рецензии:', {
-                isEditing,
-                reviewData
-            });
+
 
             await onSubmit(reviewData);
         } catch (error) {
@@ -168,8 +165,9 @@ const ReviewForm = ({
                                     type="number"
                                     id="rating"
                                     name="rating"
-                                    min="1"
+                                    min="0"
                                     max="10"
+                                    step="0.1"
                                     value={formData.rating}
                                     onChange={handleInputChange}
                                     hasError={!!errors.rating}

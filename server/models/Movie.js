@@ -377,6 +377,128 @@ class Movie {
         }
     }
 
+    // Получить фильмы с рецензиями для списка
+    static async getAllWithReviews(options = {}) {
+        const {
+            page = 1,
+            limit = 12,
+            genre = null,
+            minRating = 0,
+            maxRating = 10,
+            search = null,
+            status = null,
+            sortBy = 'created_at',
+            sortOrder = 'DESC'
+        } = options;
+
+        // Проверяем безопасность поля сортировки
+        const allowedSortFields = ['created_at', 'title', 'release_year', 'rating', 'duration'];
+        const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
+        const safeSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+        let sql = `
+            SELECT DISTINCT m.*, 
+                   GROUP_CONCAT(DISTINCT g.name) as genres,
+                   GROUP_CONCAT(DISTINCT a.name) as actors
+            FROM movies m
+            LEFT JOIN movie_genres mg ON m.id = mg.movie_id
+            LEFT JOIN genres g ON mg.genre_id = g.id
+            LEFT JOIN movie_actors ma ON m.id = ma.actor_id
+            LEFT JOIN actors a ON ma.actor_id = a.id
+        `;
+
+        const whereConditions = [];
+        const params = [];
+
+        // Фильтр по жанру
+        if (genre) {
+            whereConditions.push('g.name = ?');
+            params.push(genre);
+        }
+
+        // Фильтр по рейтингу
+        if (minRating > 0) {
+            whereConditions.push('m.rating >= ?');
+            params.push(minRating);
+        }
+        if (maxRating < 10) {
+            whereConditions.push('m.rating <= ?');
+            params.push(maxRating);
+        }
+
+        // Поиск по названию
+        if (search) {
+            whereConditions.push('(m.title LIKE ? OR m.original_title LIKE ? OR a.name LIKE ?)');
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        }
+
+        // Фильтр по статусу
+        if (status) {
+            whereConditions.push('m.status = ?');
+            params.push(status);
+        }
+
+        if (whereConditions.length > 0) {
+            sql += ' WHERE ' + whereConditions.join(' AND ');
+        }
+
+        sql += ` GROUP BY m.id ORDER BY m.${safeSortBy} ${safeSortOrder}`;
+
+        // Добавляем пагинацию
+        const offset = (page - 1) * limit;
+        sql += ` LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
+
+        try {
+            const movies = await query(sql, params);
+            
+            // Получаем общее количество фильмов для пагинации
+            let countSql = `
+                SELECT COUNT(DISTINCT m.id) as total
+                FROM movies m
+                LEFT JOIN movie_genres mg ON m.id = mg.movie_id
+                LEFT JOIN movie_actors ma ON m.id = ma.actor_id
+                LEFT JOIN genres g ON mg.genre_id = g.id
+                LEFT JOIN actors a ON ma.actor_id = a.id
+            `;
+
+            if (whereConditions.length > 0) {
+                countSql += ' WHERE ' + whereConditions.join(' AND ');
+            }
+
+            const countResult = await query(countSql, params);
+            const total = countResult.length > 0 ? countResult[0].total : 0;
+
+            // Получаем рецензии для каждого фильма
+            const moviesWithReviews = await Promise.all(movies.map(async (movie) => {
+                const reviews = await query(`
+                    SELECT id, reviewer_name, rating, review_text, review_date
+                    FROM reviews 
+                    WHERE movie_id = ?
+                    ORDER BY review_date DESC
+                `, [movie.id]);
+
+                return {
+                    ...movie,
+                    genres: movie.genres ? movie.genres.split(',') : [],
+                    actors: movie.actors ? movie.actors.split(',') : [],
+                    reviews: reviews
+                };
+            }));
+
+            return {
+                movies: moviesWithReviews,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            };
+        } catch (error) {
+            throw new Error(`Ошибка получения фильмов с рецензиями: ${error.message}`);
+        }
+    }
+
     // Удалить фильм
     static async delete(id) {
         try {

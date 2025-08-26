@@ -48,10 +48,10 @@ class Review {
             }
 
             // Проверяем валидность оценки
-            if (rating < 1 || rating > 10) {
-                throw new Error('Оценка должна быть от 1 до 10');
+            if (rating < 0 || rating > 10) {
+                throw new Error('Оценка должна быть от 0 до 10');
             }
-
+            
             const result = await query(`
                 INSERT INTO reviews (movie_id, reviewer_name, rating, review_text)
                 VALUES (?, ?, ?, ?)
@@ -75,8 +75,8 @@ class Review {
             const { rating, review_text } = reviewData;
             
             // Проверяем валидность оценки
-            if (rating !== undefined && (rating < 1 || rating > 10)) {
-                throw new Error('Оценка должна быть от 1 до 10');
+            if (rating !== undefined && (rating < 0 || rating > 10)) {
+                throw new Error('Оценка должна быть от 0 до 10');
             }
 
             // Проверяем валидность текста рецензии
@@ -89,8 +89,9 @@ class Review {
             const params = [];
 
             if (rating !== undefined && rating !== null) {
+                const parsedRating = parseFloat(rating);
                 updateFields.push('rating = ?');
-                params.push(parseInt(rating));
+                params.push(parsedRating);
             }
 
             if (review_text !== undefined && review_text !== null) {
@@ -104,9 +105,6 @@ class Review {
 
             updateFields.push('updated_at = CURRENT_TIMESTAMP');
             params.push(id);
-
-            console.log('Review.update - SQL:', `UPDATE reviews SET ${updateFields.join(', ')} WHERE id = ?`);
-            console.log('Review.update - params:', params);
 
             const result = await query(`
                 UPDATE reviews 

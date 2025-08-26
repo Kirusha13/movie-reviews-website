@@ -145,14 +145,8 @@ const AppContent = () => {
     <AppContainer>
       <Header>
         <HeaderContent>
-          <Logo>🎬 Movie Reviews</Logo>
+          <Logo onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>🎬 Movie Reviews</Logo>
                       <Nav>
-              <NavButton 
-                active={isActiveRoute('/')} 
-                onClick={() => navigate('/')}
-              >
-                Список фильмов
-              </NavButton>
               <NavButton 
                 active={isActiveRoute('/add-movie')} 
                 onClick={() => handleAddMovie()}
@@ -248,6 +242,13 @@ const Logo = styled.h1`
   font-size: 24px;
   font-weight: 700;
   margin: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: #5a6fd8;
+    transform: translateY(-1px);
+  }
   
   @media (max-width: 768px) {
     font-size: 20px;

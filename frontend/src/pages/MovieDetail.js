@@ -4,10 +4,40 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { movieService } from '../services/movieService';
 import ReviewForm from '../components/ReviewForm';
 import ReviewList from '../components/ReviewList';
+import ToastContainer from '../components/ToastContainer';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const MovieDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    // Создаем локальный toast для MovieDetail
+    const [toasts, setToasts] = useState([]);
+    
+    const showLocalSuccess = (message) => {
+        const id = Date.now() + Math.random();
+        const newToast = { id, message, type: 'success', isVisible: true };
+        setToasts(prev => [...prev, newToast]);
+        
+        // Автоматически скрываем toast через 4 секунды
+        setTimeout(() => {
+            setToasts(prev => prev.filter(toast => toast.id !== id));
+        }, 4000);
+    };
+    
+    const showLocalError = (message) => {
+        const id = Date.now() + Math.random();
+        const newToast = { id, message, type: 'error', isVisible: true };
+        setToasts(prev => [...prev, newToast]);
+        
+        // Автоматически скрываем toast через 4 секунды
+        setTimeout(() => {
+            setToasts(prev => prev.filter(toast => toast.id !== id));
+        }, 4000);
+    };
+    
+    const hideToast = (id) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
     
     const [movie, setMovie] = useState(null);
     const [reviews, setReviews] = useState([]);
@@ -16,6 +46,10 @@ const MovieDetail = () => {
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [editingReview, setEditingReview] = useState(null);
     const [defaultReviewer, setDefaultReviewer] = useState('Цеха');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [reviewToDelete, setReviewToDelete] = useState(null);
+    const [showEditConfirm, setShowEditConfirm] = useState(false);
+    const [reviewToEdit, setReviewToEdit] = useState(null);
 
     useEffect(() => {
         fetchMovieDetails();
@@ -62,10 +96,8 @@ const MovieDetail = () => {
             const existingReview = reviews.find(review => review.reviewer_name === 'Цеха');
             if (existingReview) {
                 // Если рецензия уже есть, предлагаем отредактировать её
-                if (window.confirm('У вас уже есть рецензия на этот фильм. Хотите отредактировать её?')) {
-                    setEditingReview(existingReview);
-                    setShowReviewForm(true);
-                }
+                setReviewToEdit(existingReview);
+                setShowEditConfirm(true);
             } else {
                 // Если рецензии нет, создаём новую
                 setEditingReview(null);
@@ -84,26 +116,26 @@ const MovieDetail = () => {
         setEditingReview(null);
     };
 
+    const handleConfirmEdit = () => {
+        setEditingReview(reviewToEdit);
+        setShowReviewForm(true);
+        setShowEditConfirm(false);
+        setReviewToEdit(null);
+    };
+
+    const handleCancelEdit = () => {
+        setShowEditConfirm(false);
+        setReviewToEdit(null);
+    };
+
     const handleSubmitReview = async (reviewData) => {
         try {
-            // Отладочная информация
-            console.log('MovieDetail: Получены данные рецензии:', reviewData);
-            console.log('MovieDetail: editingReview:', editingReview);
-            console.log('MovieDetail: reviewData type:', typeof reviewData);
-            console.log('MovieDetail: reviewData keys:', Object.keys(reviewData || {}));
+
             
             let response;
             if (editingReview) {
-                // Обновляем существующую рецензию
-                console.log('MovieDetail: Обновляем рецензию с ID:', editingReview.id);
-                console.log('MovieDetail: Данные для обновления:', {
-                    id: editingReview.id,
-                    reviewData: reviewData
-                });
                 response = await movieService.updateReview(editingReview.id, reviewData);
             } else {
-                // Создаем новую рецензию
-                console.log('MovieDetail: Создаем новую рецензию для фильма:', id);
                 response = await movieService.createReview(parseInt(id), reviewData);
             }
 
@@ -114,33 +146,37 @@ const MovieDetail = () => {
                 setEditingReview(null);
                 
                 // Уведомление об успехе
-                alert(editingReview ? 'Рецензия успешно обновлена!' : 'Рецензия успешно добавлена!');
+                showLocalSuccess(editingReview ? 'Рецензия успешно обновлена!' : 'Рецензия успешно добавлена!');
             } else {
                 throw new Error(response.message || 'Ошибка сохранения рецензии');
             }
         } catch (error) {
             console.error('Ошибка сохранения рецензии:', error);
-            alert(`Ошибка сохранения рецензии: ${error.message}`);
+            showLocalError(`Ошибка сохранения рецензии: ${error.message}`);
         }
     };
 
     const handleDeleteReview = async (reviewId) => {
-        if (!window.confirm('Вы уверены, что хотите удалить эту рецензию?')) {
-            return;
-        }
+        setReviewToDelete({ id: reviewId });
+        setShowDeleteConfirm(true);
+    };
 
+    const handleConfirmDelete = async () => {
         try {
-            const response = await movieService.deleteReview(reviewId);
+            const response = await movieService.deleteReview(reviewToDelete.id);
             if (response.success) {
                 // Обновляем список рецензий
                 await fetchMovieDetails();
-                alert('Рецензия успешно удалена!');
+                showLocalSuccess('Рецензия успешно удалена!');
             } else {
                 throw new Error(response.message || 'Ошибка удаления рецензии');
             }
         } catch (error) {
             console.error('Ошибка удаления рецензии:', error);
-            alert(`Ошибка удаления рецензии: ${error.message}`);
+            showLocalError(`Ошибка удаления рецензии: ${error.message}`);
+        } finally {
+            setShowDeleteConfirm(false);
+            setReviewToDelete(null);
         }
     };
 
@@ -289,6 +325,36 @@ const MovieDetail = () => {
                     />
                 </>
             )}
+
+            {/* Диалог подтверждения удаления рецензии */}
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                title="Удалить рецензию"
+                message="Вы уверены, что хотите удалить эту рецензию? Это действие нельзя отменить."
+                confirmText="Удалить"
+                cancelText="Отмена"
+                type="danger"
+                onConfirm={handleConfirmDelete}
+                onCancel={() => {
+                    setShowDeleteConfirm(false);
+                    setReviewToDelete(null);
+                }}
+            />
+
+            {/* Диалог подтверждения редактирования рецензии */}
+            <ConfirmDialog
+                isOpen={showEditConfirm}
+                title="Редактировать рецензию"
+                message="У вас уже есть рецензия на этот фильм. Хотите отредактировать её?"
+                confirmText="Редактировать"
+                cancelText="Отмена"
+                type="info"
+                onConfirm={handleConfirmEdit}
+                onCancel={handleCancelEdit}
+            />
+
+            {/* Toast уведомления */}
+            <ToastContainer toasts={toasts} onHideToast={hideToast} />
         </PageContainer>
     );
 };

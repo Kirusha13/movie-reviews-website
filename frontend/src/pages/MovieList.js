@@ -78,7 +78,7 @@ const MovieList = ({ onEditMovie }) => {
             setLoading(true);
             setError(null);
 
-            const response = await movieService.getMovies({
+            const response = await movieService.getMoviesWithReviews({
                 ...filters,
                 page: pagination.page,
                 limit: pagination.limit

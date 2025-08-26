@@ -54,16 +54,7 @@ const createReview = async (req, res) => {
         const { movieId } = req.params;
         const { reviewer_name, rating, review_text } = req.body;
 
-        // Отладочная информация
-        console.log('Получены данные рецензии:', {
-            movieId,
-            reviewer_name,
-            reviewer_name_type: typeof reviewer_name,
-            reviewer_name_length: reviewer_name ? reviewer_name.length : 'undefined',
-            reviewer_name_chars: reviewer_name ? Array.from(reviewer_name).map(c => c.charCodeAt(0)) : 'undefined',
-            rating,
-            review_text
-        });
+
 
         // Валидация
         if (!reviewer_name || !['Цеха', 'Паша'].includes(reviewer_name)) {
@@ -74,10 +65,10 @@ const createReview = async (req, res) => {
             });
         }
 
-        if (!rating || rating < 1 || rating > 10) {
+        if (!rating || rating < 0 || rating > 10) {
             return res.status(400).json({
                 success: false,
-                message: 'Оценка должна быть от 1 до 10'
+                message: 'Оценка должна быть от 0 до 10'
             });
         }
 
@@ -100,7 +91,7 @@ const createReview = async (req, res) => {
         const reviewId = await Review.create({
             movie_id: parseInt(movieId),
             reviewer_name,
-            rating: parseInt(rating),
+            rating: parseFloat(rating),
             review_text: review_text.trim()
         });
 
@@ -125,6 +116,8 @@ const updateReview = async (req, res) => {
         const { id } = req.params;
         const { rating, review_text } = req.body;
 
+
+
         // Проверяем существование рецензии
         const existingReview = await Review.getById(parseInt(id));
         if (!existingReview) {
@@ -135,10 +128,10 @@ const updateReview = async (req, res) => {
         }
 
         // Валидация
-        if (rating && (rating < 1 || rating > 10)) {
+        if (rating && (rating < 0 || rating > 10)) {
             return res.status(400).json({
                 success: false,
-                message: 'Оценка должна быть от 1 до 10'
+                message: 'Оценка должна быть от 0 до 10'
             });
         }
 
@@ -150,7 +143,7 @@ const updateReview = async (req, res) => {
         }
 
         const updateData = {};
-        if (rating !== undefined) updateData.rating = parseInt(rating);
+        if (rating !== undefined) updateData.rating = parseFloat(rating);
         if (review_text !== undefined) updateData.review_text = review_text.trim();
 
         await Review.update(parseInt(id), updateData);

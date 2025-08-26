@@ -5,6 +5,9 @@ const movieController = require('../controllers/movieController');
 // Получить все фильмы с фильтрацией и пагинацией
 router.get('/', movieController.getAllMovies);
 
+// Получить все фильмы с рецензиями для списка
+router.get('/with-reviews', movieController.getAllMoviesWithReviews);
+
 // Поиск фильмов
 router.get('/search', movieController.searchMovies);
 
