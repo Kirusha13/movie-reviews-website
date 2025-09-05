@@ -5,7 +5,8 @@ import MovieList from './pages/MovieList';
 import MovieForm from './components/MovieForm';
 import MovieDetail from './pages/MovieDetail';
 import WatchlistPage from './pages/WatchlistPage';
-
+import TierListsPage from './pages/TierListsPage';
+import TierListEditor from './pages/TierListEditor';
 import ToastContainer from './components/ToastContainer';
 import useToast from './hooks/useToast';
 
@@ -149,6 +150,9 @@ const AppContent = () => {
         <HeaderContent>
           <Logo onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>🎬 Movie Reviews</Logo>
                       <Nav>
+              <NavButton onClick={() => navigate('/tier-lists')}>
+                 📊 Tier-List
+              </NavButton>
               <NavButton 
                 active={isActiveRoute('/watchlist')} 
                 onClick={() => navigate('/watchlist')}
@@ -194,6 +198,8 @@ const AppContent = () => {
               onRefreshGenresAndActors={refreshGenresAndActors}
             />
           } />
+          <Route path="/tier-lists" element={<TierListsPage />} />
+          <Route path="/tier-lists/:id" element={<TierListEditor />} />
 
         </Routes>
       </MainContent>

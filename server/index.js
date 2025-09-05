@@ -22,6 +22,7 @@ app.use('/api/movies', require('./routes/movies'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/genres', require('./routes/genres'));
 app.use('/api/actors', require('./routes/actors'));
+app.use('/api/tier-lists', require('./routes/tierLists'));
 
 // Тестовый маршрут
 app.get('/api/health', (req, res) => {

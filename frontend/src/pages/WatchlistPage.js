@@ -4,11 +4,13 @@ import { movieService } from '../services/movieService';
 import WatchlistMovieCard from '../components/WatchlistMovieCard';
 import MovieFilters from '../components/MovieFilters';
 import Pagination from '../components/Pagination';
+import useToast from '../hooks/useToast';
 
 const WatchlistPage = React.memo(() => {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { showToast } = useToast();
     const [pagination, setPagination] = useState({
         page: 1,
         limit: 12,
@@ -110,21 +112,39 @@ const WatchlistPage = React.memo(() => {
         fetchWatchlist(newPage, filters);
     }, [fetchWatchlist, filters]);
 
-    // Обработчик удаления фильма из списка желаемых
+    // Обработчик удаления фильма из списка желаемых (перенос в просмотренные)
     const handleRemoveFromWatchlist = useCallback(async (movieId) => {
         try {
             const response = await movieService.removeFromWatchlist(movieId);
             if (response.success) {
                 // Обновляем список
                 await fetchWatchlist(pagination.page, filters);
+                showToast('Фильм отмечен как просмотренный', 'success');
             } else {
-                throw new Error(response.message || 'Ошибка удаления из списка желаемых');
+                throw new Error(response.message || 'Ошибка переноса в просмотренные');
             }
         } catch (error) {
-            console.error('Ошибка удаления из списка желаемых:', error);
+            console.error('Ошибка переноса в просмотренные:', error);
             setError(error.message);
         }
-    }, [fetchWatchlist, pagination.page, filters]);
+    }, [fetchWatchlist, pagination.page, filters, showToast]);
+
+    // Обработчик полного удаления фильма
+    const handleDeleteMovie = useCallback(async (movieId) => {
+        try {
+            const response = await movieService.deleteMovie(movieId);
+            if (response.success) {
+                // Обновляем список
+                await fetchWatchlist(pagination.page, filters);
+                showToast('Фильм полностью удален', 'success');
+            } else {
+                throw new Error(response.message || 'Ошибка удаления фильма');
+            }
+        } catch (error) {
+            console.error('Ошибка удаления фильма:', error);
+            setError(error.message);
+        }
+    }, [fetchWatchlist, pagination.page, filters, showToast]);
 
     // Загружаем данные при монтировании компонента
     useEffect(() => {
@@ -245,6 +265,12 @@ const WatchlistPage = React.memo(() => {
                                 key={movie.id}
                                 movie={movie}
                                 onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                                onEditMovie={() => {
+                                    // Для фильмов из watchlist редактирование не нужно,
+                                    // так как они уже добавлены и их можно только удалить
+                                    console.log('Редактирование фильмов из watchlist не поддерживается');
+                                }}
+                                onDeleteMovie={handleDeleteMovie}
                             />
                         ))}
                     </MoviesGrid>

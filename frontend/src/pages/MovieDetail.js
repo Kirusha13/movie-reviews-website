@@ -86,20 +86,28 @@ const MovieDetail = () => {
     };
 
     const handleAddReview = (reviewerName = 'Цеха') => {
+        console.log('MovieDetail: handleAddReview вызван с reviewerName:', reviewerName);
+        console.log('MovieDetail: текущие reviews:', reviews);
+
         setDefaultReviewer(reviewerName);
         if (reviewerName === 'Паша') {
             // Для Паши просто показываем форму создания
+            console.log('MovieDetail: открываем форму для Паши');
             setEditingReview(null);
             setShowReviewForm(true);
         } else {
             // Для Цеха проверяем, есть ли уже рецензия
             const existingReview = reviews.find(review => review.reviewer_name === 'Цеха');
+            console.log('MovieDetail: existingReview для Цеха:', existingReview);
+
             if (existingReview) {
                 // Если рецензия уже есть, предлагаем отредактировать её
+                console.log('MovieDetail: показываем диалог редактирования для Цеха');
                 setReviewToEdit(existingReview);
                 setShowEditConfirm(true);
             } else {
                 // Если рецензии нет, создаём новую
+                console.log('MovieDetail: открываем форму создания для Цеха');
                 setEditingReview(null);
                 setShowReviewForm(true);
             }
@@ -164,21 +172,27 @@ const MovieDetail = () => {
 
     const handleSubmitReview = async (reviewData) => {
         try {
+            console.log('MovieDetail: handleSubmitReview вызван');
+            console.log('MovieDetail: reviewData:', reviewData);
+            console.log('MovieDetail: editingReview:', editingReview);
 
-            
             let response;
             if (editingReview) {
+                console.log('MovieDetail: обновление рецензии');
                 response = await movieService.updateReview(editingReview.id, reviewData);
             } else {
+                console.log('MovieDetail: создание новой рецензии');
                 response = await movieService.createReview(parseInt(id), reviewData);
             }
+
+            console.log('MovieDetail: ответ от сервера:', response);
 
             if (response.success) {
                 // Обновляем список рецензий
                 await fetchMovieDetails();
                 setShowReviewForm(false);
                 setEditingReview(null);
-                
+
                 // Уведомление об успехе
                 showLocalSuccess(editingReview ? 'Рецензия успешно обновлена!' : 'Рецензия успешно добавлена!');
             } else {
@@ -275,11 +289,12 @@ const MovieDetail = () => {
                             <TitleRow>
                                 <MovieTitle>{movie.title || 'Без названия'}</MovieTitle>
                                 <TitleActions>
-                                    {movie.status === 'watched' && (
-                                        <ActionButton onClick={handleAddReview} title="Добавить рецензию">
-                                            ✍️
-                                        </ActionButton>
-                                    )}
+                                    <ActionButton onClick={() => {
+                                        console.log('MovieDetail: кнопка "Добавить рецензию" нажата');
+                                        handleAddReview();
+                                    }} title="Добавить рецензию">
+                                        ✍️
+                                    </ActionButton>
                                     {movie.status === 'watchlist' ? (
                                         <ActionButton onClick={handleRemoveFromWatchlist} title="Убрать из списка желаемых">
                                             ❌

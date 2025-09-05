@@ -74,23 +74,28 @@ const ReviewForm = ({
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
+        console.log('ReviewForm: handleSubmit вызван');
+        console.log('ReviewForm: formData:', formData);
+        console.log('ReviewForm: isEditing:', isEditing);
+
         if (!validateForm()) {
+            console.log('ReviewForm: валидация не прошла');
             return;
         }
 
         setIsSubmitting(true);
-        
+
         try {
             let reviewData;
-            
+
             if (isEditing) {
                 // При редактировании отправляем только те поля, которые можно изменять
                 reviewData = {
                     rating: parseFloat(formData.rating) || 0,
                     review_text: formData.review_text ? formData.review_text.trim() : ''
                 };
-                
+
                 // Проверяем, что данные корректны
                 if (reviewData.rating === null || reviewData.rating === undefined || reviewData.rating < 0 || reviewData.rating > 10) {
                     throw new Error('Некорректная оценка (должна быть от 0 до 10)');
@@ -108,9 +113,11 @@ const ReviewForm = ({
                 };
             }
 
-
+            console.log('ReviewForm: отправка reviewData:', reviewData);
+            console.log('ReviewForm: onSubmit функция:', typeof onSubmit);
 
             await onSubmit(reviewData);
+            console.log('ReviewForm: onSubmit выполнен успешно');
         } catch (error) {
             console.error('Ошибка отправки рецензии:', error);
         } finally {
@@ -207,6 +214,7 @@ const ReviewForm = ({
                         Отмена
                     </CancelButton>
                     <SubmitButton type="submit" disabled={isSubmitting}>
+                        {console.log('ReviewForm: isSubmitting:', isSubmitting)}
                         {isSubmitting ? 'Сохранение...' : (isEditing ? 'Обновить' : 'Добавить')}
                     </SubmitButton>
                 </ButtonGroup>

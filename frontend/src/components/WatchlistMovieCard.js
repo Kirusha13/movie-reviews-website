@@ -1,7 +1,7 @@
 import React from 'react';
 import MovieCard from './MovieCard';
 
-const WatchlistMovieCard = ({ movie, onRemoveFromWatchlist }) => {
+const WatchlistMovieCard = ({ movie, onRemoveFromWatchlist, onEditMovie, onDeleteMovie }) => {
     // Используем обычный MovieCard с правильными пропсами
     return (
         <MovieCard
@@ -9,8 +9,8 @@ const WatchlistMovieCard = ({ movie, onRemoveFromWatchlist }) => {
             onMovieClick={() => {}} // Пустая функция, так как MovieCard сам обрабатывает клики
             onAddToWatchlist={() => {}} // Пустая функция для watched фильмов
             onRemoveFromWatchlist={onRemoveFromWatchlist}
-            onEditMovie={() => {}} // Пустая функция
-            onDeleteMovie={() => {}} // Пустая функция
+            onEditMovie={onEditMovie}
+            onDeleteMovie={onDeleteMovie} // Полное удаление фильма из системы
         />
     );
 };

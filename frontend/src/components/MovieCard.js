@@ -173,7 +173,7 @@ const MovieCard = React.memo(({ movie, onMovieClick, onAddToWatchlist, onRemoveF
                             <DeleteButton onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteClick(e);
-                            }} title="Удалить">
+                            }} title="Удалить фильм">
                                 🗑️
                             </DeleteButton>
                         </ActionButtons>
@@ -489,27 +489,6 @@ const WatchedButton = styled.button`
 
     &:hover {
         background: #45a049;
-        transform: scale(1.1);
-    }
-`;
-
- const RemoveButton = styled.button`
-    background: #f44336;
-    color: white;
-    border: none;
-    padding: 8px;
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-        background: #da190b;
         transform: scale(1.1);
     }
 `;

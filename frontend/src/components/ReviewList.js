@@ -52,9 +52,17 @@ const ReviewList = ({
         <Container>
             <Header>
                 <Title>Рецензии ({reviews.length})</Title>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    {!reviews.some(review => review.reviewer_name === 'Цеха') && (
+                        <AddReviewButton
+                            onClick={() => onAddReview('Цеха')}
+                            style={{ background: '#667eea', borderColor: '#667eea' }}
+                        >
+                            ✍️ Добавить рецензию от Цеха
+                        </AddReviewButton>
+                    )}
                     {!reviews.some(review => review.reviewer_name === 'Паша') && (
-                        <AddReviewButton 
+                        <AddReviewButton
                             onClick={() => onAddReview('Паша')}
                             style={{ background: '#ff6b6b', borderColor: '#ff6b6b' }}
                         >

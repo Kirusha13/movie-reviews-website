@@ -170,3 +170,33 @@ BEGIN
     WHERE id = OLD.movie_id;
 END//
 DELIMITER ;
+
+-- Таблица tier-листов
+CREATE TABLE tier_lists (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Таблица связи tier-листов с фильмами
+CREATE TABLE tier_list_movies (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    tier_list_id INT NOT NULL,
+    movie_id INT NOT NULL,
+    tier ENUM('S', 'A', 'B', 'C', 'D', 'F') NOT NULL DEFAULT 'C',
+    position INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (tier_list_id) REFERENCES tier_lists(id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_tier_list_movie (tier_list_id, movie_id)
+);
+
+-- Индексы для оптимизации запросов tier-листов
+CREATE INDEX idx_tier_lists_created_at ON tier_lists(created_at);
+CREATE INDEX idx_tier_list_movies_tier_list_id ON tier_list_movies(tier_list_id);
+CREATE INDEX idx_tier_list_movies_movie_id ON tier_list_movies(movie_id);
+CREATE INDEX idx_tier_list_movies_tier ON tier_list_movies(tier);
+CREATE INDEX idx_tier_list_movies_position ON tier_list_movies(position);
